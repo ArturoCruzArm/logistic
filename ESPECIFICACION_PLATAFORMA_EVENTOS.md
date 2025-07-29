@@ -1818,17 +1818,47 @@ CREATE TABLE citas_proceso (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE inversiones_proveedor (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  proveedor_id UUID REFERENCES usuarios(id),
+  nombre_inversion VARCHAR(255) NOT NULL, -- 'Equipo fotografico', 'Vehiculo', 'Capacitacion'
+  monto_total DECIMAL(10,2) NOT NULL,
+  fecha_inversion DATE NOT NULL,
+  vida_util_meses INTEGER NOT NULL, -- Para depreciar
+  valor_residual DECIMAL(10,2) DEFAULT 0,
+  porcentaje_uso_eventos DECIMAL(5,2) DEFAULT 100, -- Qué % se usa para eventos
+  descripcion TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE analisis_rentabilidad (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cotizacion_id UUID REFERENCES cotizaciones(id),
+  costos_directos DECIMAL(10,2) NOT NULL,
+  costos_indirectos DECIMAL(10,2) NOT NULL,
+  depreciacion_equipo DECIMAL(10,2) NOT NULL,
+  retorno_inversiones DECIMAL(10,2) NOT NULL,
+  utilidad_neta DECIMAL(10,2) NOT NULL,
+  margen_neto_porcentaje DECIMAL(5,2) NOT NULL,
+  punto_equilibrio_eventos INTEGER,
+  es_rentable BOOLEAN NOT NULL,
+  recomendacion_precio DECIMAL(10,2),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE conceptos_costo (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   servicio_id UUID REFERENCES servicios(id),
-  cita_proceso_id UUID REFERENCES citas_proceso(id), -- Nuevo: costos por cita
+  cita_proceso_id UUID REFERENCES citas_proceso(id),
+  inversion_id UUID REFERENCES inversiones_proveedor(id), -- Nuevo: costos por inversión
   descripcion VARCHAR(255) NOT NULL,
   costo_unitario DECIMAL(10,2) NOT NULL,
   cantidad INTEGER DEFAULT 1,
-  tipo_costo VARCHAR(50) NOT NULL, -- 'materiales', 'mano_obra', 'transporte', 'ganancia', 'proceso', 'viaje', 'espera'
+  tipo_costo VARCHAR(50) NOT NULL, -- 'materiales', 'mano_obra', 'transporte', 'ganancia', 'proceso', 'viaje', 'espera', 'depreciacion', 'retorno_inversion'
   justificacion TEXT NOT NULL,
   aplica_por_hora BOOLEAN DEFAULT FALSE,
   incluye_tiempo_viaje BOOLEAN DEFAULT FALSE,
+  es_costo_fijo BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -1865,51 +1895,74 @@ CREATE TABLE cotizaciones (
 4. **Generar cotizaciones** automáticas
 5. **Dashboard básico** de cotizaciones enviadas
 
-### 11.4 Ejemplo de Transparencia Total
+### 11.4 Ejemplo de Análisis de Rentabilidad Completo
 
-**Servicio: Fotografía de Boda**
+**Servicio: Fotografía de Boda - Análisis Empresarial**
 
 ```
-COSTOS DEL SERVICIO PRINCIPAL:
-├── Equipo fotográfico: $800 (Cámaras, lentes, flash)
-├── Fotógrafo principal: $1,200 (8 horas x $150/hora)
-├── Asistente: $640 (8 horas x $80/hora)
-└── Edición: $600 (20 horas x $30/hora)
+💰 INVERSIONES DEL PROVEEDOR:
+├── Cámaras profesionales: $45,000 (depreciación 5 años)
+├── Lentes especializados: $25,000 (depreciación 5 años)
+├── Equipo de iluminación: $15,000 (depreciación 3 años)
+├── Vehículo de trabajo: $180,000 (depreciación 8 años)
+├── Software de edición: $12,000/año (licencias)
+└── Capacitación profesional: $20,000 (depreciación 2 años)
+   TOTAL INVERSIONES: $297,000
 
-COSTOS DE CITAS/PROCESOS:
+📊 COSTOS POR EVENTO:
 
-1. SESIÓN PREVIA (Obligatoria)
-   ├── Transporte: $150 (25km x $6/km)
-   ├── Tiempo viaje: $200 (2 horas x $100/hora)
-   ├── Sesión: $300 (2 horas x $150/hora)
-   └── Subtotal: $650
+1. COSTOS DIRECTOS:
+   ├── Fotógrafo principal: $1,200 (8 horas x $150/hora)
+   ├── Asistente: $640 (8 horas x $80/hora)
+   ├── Combustible: $300 (traslados múltiples)
+   ├── Edición: $600 (20 horas x $30/hora)
+   └── Subtotal: $2,740
 
-2. FIRMA DE CONTRATO
-   ├── Transporte: $90 (15km x $6/km)
-   ├── Tiempo viaje: $100 (1 hora x $100/hora)
-   ├── Reunión: $150 (1 hora x $150/hora)
-   └── Subtotal: $340
+2. COSTOS INDIRECTOS:
+   ├── Seguros equipo: $200 (prorrateo mensual)
+   ├── Mantenimiento equipo: $150
+   ├── Almacenamiento: $100 (estudio/bodega)
+   ├── Marketing: $300 (publicidad/redes)
+   └── Subtotal: $750
 
-3. ENTREGA DE FOTOS
-   ├── Transporte: $120 (20km x $6/km)
-   ├── Tiempo viaje: $100 (1 hora x $100/hora)
-   ├── Presentación: $300 (2 horas x $150/hora)
-   └── Subtotal: $520
+3. DEPRECIACIÓN DE INVERSIONES:
+   ├── Equipo fotográfico: $350 (uso por evento)
+   ├── Vehículo: $180 (uso por evento)
+   ├── Software: $100 (licencias/evento)
+   └── Subtotal: $630
 
-RESUMEN COMPLETO:
-├── Servicio principal: $3,240
-├── Procesos/citas: $1,510
-├── Ganancia (15%): $712
-└── TOTAL: $5,462
+4. RETORNO DE INVERSIONES:
+   ├── ROI esperado: 20% anual
+   ├── Inversión total: $297,000
+   ├── Retorno anual: $59,400
+   ├── Eventos/año: 50
+   └── Retorno por evento: $1,188
 
-TIEMPO REAL INVERTIDO:
-- Trabajo directo: 8 horas (evento)
-- Procesos: 6 horas (citas)
-- Viajes: 4 horas (traslados)
-- Edición: 20 horas (post-producción)
-- TOTAL: 38 horas de trabajo
+💵 ANÁLISIS FINANCIERO:
+├── Costos directos: $2,740
+├── Costos indirectos: $750
+├── Depreciación: $630
+├── Retorno inversiones: $1,188
+├── COSTO TOTAL: $5,308
+├── Precio propuesto: $6,500
+├── UTILIDAD NETA: $1,192
+└── MARGEN NETO: 18.3%
 
-COSTO POR HORA REAL: $143.74
+📈 ANÁLISIS DE VIABILIDAD:
+✅ Rentable: SÍ (margen > 15%)
+✅ Punto equilibrio: 35 eventos/año
+✅ Capacidad crecimiento: ALTA
+⚠️  Riesgo: Depende de 50 eventos/año
+
+🎯 RECOMENDACIONES:
+- Precio mínimo viable: $5,800
+- Precio óptimo: $6,500
+- Para crecer: Aumentar a 65 eventos/año
+- Siguiente inversión: Drone ($30,000)
+
+TIEMPO REAL INVERTIDO: 38 horas
+COSTO REAL POR HORA: $139.68
+UTILIDAD POR HORA: $31.37
 ```
 
 ### 11.5 API Endpoints Mínimos
@@ -1944,6 +1997,17 @@ POST   /api/citas-proceso/:id/conceptos-costo
 PUT    /api/conceptos-costo/:id
 DELETE /api/conceptos-costo/:id
 
+// Inversiones
+GET    /api/proveedores/:id/inversiones
+POST   /api/proveedores/:id/inversiones
+PUT    /api/inversiones/:id
+DELETE /api/inversiones/:id
+
+// Análisis de Rentabilidad
+GET    /api/cotizaciones/:id/analisis-rentabilidad
+POST   /api/cotizaciones/:id/analizar-rentabilidad
+GET    /api/proveedores/:id/rentabilidad-historica
+
 // Cotizaciones
 POST   /api/cotizaciones
 GET    /api/cotizaciones/evento/:eventoId
@@ -1964,11 +2028,15 @@ PUT    /api/cotizaciones/:id/estatus
 
 // Para Proveedores
 - ServiceCreationForm: Crear servicio con conceptos
+- InvestmentManager: Gestionar inversiones y depreciaciones
 - ProcessAppointmentManager: Gestionar citas de proceso
 - CostItemManager: Gestionar conceptos por servicio y proceso
+- ProfitabilityAnalyzer: Análisis de rentabilidad en tiempo real
 - TravelTimeCalculator: Calcular costos de viaje y tiempo
+- BusinessViabilityDashboard: Panel de sostenibilidad del negocio
 - JustificationEditor: Explicar cada costo detalladamente
-- QuoteGenerator: Cotizaciones con costos de proceso incluidos
+- QuoteGenerator: Cotizaciones con análisis financiero completo
+- ROICalculator: Cálculo de retorno de inversiones
 
 // Compartidos
 - TransparentCostDisplay: Mostrar costos justificados
@@ -1984,13 +2052,15 @@ PUT    /api/cotizaciones/:id/estatus
 - Implementar autenticación básica
 - Crear esquema de base de datos
 
-**Semana 3-4: Core de Costos Transparentes**
+**Semana 3-4: Core de Costos y Rentabilidad**
 - Crear/gestionar servicios
+- Sistema de inversiones y depreciaciones
 - Sistema de citas/procesos
 - Conceptos de costo por servicio y proceso
+- Análisis de rentabilidad en tiempo real
 - Cálculo de tiempo de viaje y costos
 - Justificaciones obligatorias
-- Calculadora de precios integral
+- Calculadora de precios con ROI
 
 **Semana 5-6: Cotizaciones**
 - Solicitar cotizaciones
@@ -2082,91 +2152,88 @@ flowchart TD
 - Supabase Pro: $25/mes (más DB y usuarios)
 - Pero solo cuando tengas ingresos reales
 
-### 9.45 Diagrama de MVP - Transparencia Total con Procesos
+### 9.45 Diagrama de MVP - Análisis de Rentabilidad Empresarial
 
 ```mermaid
 flowchart TD
-    subgraph "Evento Completo"
-        EV[Evento Principal: Boda]
-        CP1[Cita: Sesión Previa]
-        CP2[Cita: Firma Contrato]
-        CP3[Cita: Entrega Final]
+    subgraph "Inversiones del Proveedor"
+        CAM[Cámaras: $45,000]
+        LEN[Lentes: $25,000]
+        ILU[Iluminación: $15,000]
+        VEH[Vehículo: $180,000]
+        SOF[Software: $12,000/año]
+        CAP[Capacitación: $20,000]
+        TINV[TOTAL: $297,000]
     end
     
-    subgraph "Costos Servicio Principal"
-        MAT[Equipo: $800]
-        FOT[Fotógrafo: $1,200]
-        ASI[Asistente: $640]
-        EDI[Edición: $600]
-    end
-    
-    subgraph "Costos de Procesos"
-        subgraph "Sesión Previa"
-            T1[Transporte: $150]
-            V1[Tiempo Viaje: $200]
-            S1[Sesión: $300]
+    subgraph "Costos por Evento"
+        subgraph "Directos"
+            CD1[Fotógrafo: $1,200]
+            CD2[Asistente: $640]
+            CD3[Combustible: $300]
+            CD4[Edición: $600]
+            TCD[Total: $2,740]
         end
         
-        subgraph "Firma Contrato"
-            T2[Transporte: $90]
-            V2[Tiempo Viaje: $100]
-            S2[Reunión: $150]
+        subgraph "Indirectos"
+            CI1[Seguros: $200]
+            CI2[Mantenimiento: $150]
+            CI3[Almacenamiento: $100]
+            CI4[Marketing: $300]
+            TCI[Total: $750]
         end
         
-        subgraph "Entrega Final"
-            T3[Transporte: $120]
-            V3[Tiempo Viaje: $100]
-            S3[Presentación: $300]
+        subgraph "Depreciación"
+            DEP1[Equipo: $350]
+            DEP2[Vehículo: $180]
+            DEP3[Software: $100]
+            TDEP[Total: $630]
+        end
+        
+        subgraph "ROI"
+            ROI1[20% anual esperado]
+            ROI2[50 eventos/año]
+            ROI3[Por evento: $1,188]
         end
     end
     
-    subgraph "Transparencia Total"
-        SER[Servicio: $3,240]
-        PRO[Procesos: $1,510]
-        GAN[Ganancia: $712]
-        TOT[TOTAL: $5,462]
-        HOR[38 horas reales]
-        PHR[$143.74/hora real]
+    subgraph "Análisis Final"
+        CT[Costo Total: $5,308]
+        PP[Precio Propuesto: $6,500]
+        UN[Utilidad Neta: $1,192]
+        MN[Margen: 18.3%]
+        RENT[Rentable: SÍ]
+        PE[Punto Equilibrio: 35 eventos]
     end
     
-    EV --> MAT
-    EV --> FOT
-    EV --> ASI
-    EV --> EDI
+    subgraph "Decisiones Empresariales"
+        MIN[Precio Mínimo: $5,800]
+        OPT[Precio Óptimo: $6,500]
+        CREC[Crecimiento: 65 eventos/año]
+        NINV[Nueva Inversión: Drone $30K]
+    end
     
-    CP1 --> T1
-    CP1 --> V1
-    CP1 --> S1
+    CAM --> TINV
+    LEN --> TINV
+    ILU --> TINV
+    VEH --> TINV
+    SOF --> TINV
+    CAP --> TINV
     
-    CP2 --> T2
-    CP2 --> V2
-    CP2 --> S2
+    TCD --> CT
+    TCI --> CT
+    TDEP --> CT
+    ROI3 --> CT
     
-    CP3 --> T3
-    CP3 --> V3
-    CP3 --> S3
+    CT --> PP
+    PP --> UN
+    UN --> MN
+    MN --> RENT
     
-    MAT --> SER
-    FOT --> SER
-    ASI --> SER
-    EDI --> SER
-    
-    T1 --> PRO
-    V1 --> PRO
-    S1 --> PRO
-    T2 --> PRO
-    V2 --> PRO
-    S2 --> PRO
-    T3 --> PRO
-    V3 --> PRO
-    S3 --> PRO
-    
-    SER --> TOT
-    PRO --> TOT
-    GAN --> TOT
-    
-    TOT --> HOR
-    HOR --> PHR
+    RENT --> MIN
+    RENT --> OPT
+    RENT --> CREC
+    RENT --> NINV
 ```
 
 ### 9.46 Diagrama de Ecosistema Completo
