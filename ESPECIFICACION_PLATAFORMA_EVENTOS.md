@@ -1803,14 +1803,32 @@ CREATE TABLE servicios (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE citas_proceso (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  evento_id UUID REFERENCES eventos(id),
+  servicio_id UUID REFERENCES servicios(id),
+  nombre_cita VARCHAR(255) NOT NULL, -- 'sesion_previa', 'firma_contrato', 'entrega_domicilio'
+  descripcion TEXT,
+  fecha_programada TIMESTAMP,
+  duracion_estimada_minutos INTEGER NOT NULL,
+  ubicacion_cita VARCHAR(255),
+  distancia_km DECIMAL(8,2),
+  tiempo_viaje_minutos INTEGER,
+  es_obligatoria BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE conceptos_costo (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   servicio_id UUID REFERENCES servicios(id),
+  cita_proceso_id UUID REFERENCES citas_proceso(id), -- Nuevo: costos por cita
   descripcion VARCHAR(255) NOT NULL,
   costo_unitario DECIMAL(10,2) NOT NULL,
   cantidad INTEGER DEFAULT 1,
-  tipo_costo VARCHAR(50) NOT NULL, -- 'materiales', 'mano_obra', 'transporte', 'ganancia'
+  tipo_costo VARCHAR(50) NOT NULL, -- 'materiales', 'mano_obra', 'transporte', 'ganancia', 'proceso', 'viaje', 'espera'
   justificacion TEXT NOT NULL,
+  aplica_por_hora BOOLEAN DEFAULT FALSE,
+  incluye_tiempo_viaje BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -1847,7 +1865,54 @@ CREATE TABLE cotizaciones (
 4. **Generar cotizaciones** automáticas
 5. **Dashboard básico** de cotizaciones enviadas
 
-### 11.4 API Endpoints Mínimos
+### 11.4 Ejemplo de Transparencia Total
+
+**Servicio: Fotografía de Boda**
+
+```
+COSTOS DEL SERVICIO PRINCIPAL:
+├── Equipo fotográfico: $800 (Cámaras, lentes, flash)
+├── Fotógrafo principal: $1,200 (8 horas x $150/hora)
+├── Asistente: $640 (8 horas x $80/hora)
+└── Edición: $600 (20 horas x $30/hora)
+
+COSTOS DE CITAS/PROCESOS:
+
+1. SESIÓN PREVIA (Obligatoria)
+   ├── Transporte: $150 (25km x $6/km)
+   ├── Tiempo viaje: $200 (2 horas x $100/hora)
+   ├── Sesión: $300 (2 horas x $150/hora)
+   └── Subtotal: $650
+
+2. FIRMA DE CONTRATO
+   ├── Transporte: $90 (15km x $6/km)
+   ├── Tiempo viaje: $100 (1 hora x $100/hora)
+   ├── Reunión: $150 (1 hora x $150/hora)
+   └── Subtotal: $340
+
+3. ENTREGA DE FOTOS
+   ├── Transporte: $120 (20km x $6/km)
+   ├── Tiempo viaje: $100 (1 hora x $100/hora)
+   ├── Presentación: $300 (2 horas x $150/hora)
+   └── Subtotal: $520
+
+RESUMEN COMPLETO:
+├── Servicio principal: $3,240
+├── Procesos/citas: $1,510
+├── Ganancia (15%): $712
+└── TOTAL: $5,462
+
+TIEMPO REAL INVERTIDO:
+- Trabajo directo: 8 horas (evento)
+- Procesos: 6 horas (citas)
+- Viajes: 4 horas (traslados)
+- Edición: 20 horas (post-producción)
+- TOTAL: 38 horas de trabajo
+
+COSTO POR HORA REAL: $143.74
+```
+
+### 11.5 API Endpoints Mínimos
 
 ```javascript
 // Railway + Express.js
@@ -1865,9 +1930,17 @@ POST   /api/servicios
 GET    /api/servicios/:id
 GET    /api/servicios/categoria/:categoriaId
 
-// Conceptos de Costo
+// Citas de Proceso
+GET    /api/eventos/:id/citas-proceso
+POST   /api/eventos/:id/citas-proceso
+PUT    /api/citas-proceso/:id
+DELETE /api/citas-proceso/:id
+
+// Conceptos de Costo (Servicio + Proceso)
 GET    /api/servicios/:id/conceptos-costo
 POST   /api/servicios/:id/conceptos-costo
+GET    /api/citas-proceso/:id/conceptos-costo
+POST   /api/citas-proceso/:id/conceptos-costo
 PUT    /api/conceptos-costo/:id
 DELETE /api/conceptos-costo/:id
 
@@ -1878,7 +1951,7 @@ GET    /api/cotizaciones/proveedor/:proveedorId
 PUT    /api/cotizaciones/:id/estatus
 ```
 
-### 11.5 Componentes Frontend Clave
+### 11.6 Componentes Frontend Clave
 
 ```typescript
 // Next.js + TypeScript + Tailwind
@@ -1891,9 +1964,11 @@ PUT    /api/cotizaciones/:id/estatus
 
 // Para Proveedores
 - ServiceCreationForm: Crear servicio con conceptos
-- CostItemManager: Gestionar conceptos de costo
-- JustificationEditor: Explicar cada costo
-- QuoteGenerator: Generar cotizaciones automáticas
+- ProcessAppointmentManager: Gestionar citas de proceso
+- CostItemManager: Gestionar conceptos por servicio y proceso
+- TravelTimeCalculator: Calcular costos de viaje y tiempo
+- JustificationEditor: Explicar cada costo detalladamente
+- QuoteGenerator: Cotizaciones con costos de proceso incluidos
 
 // Compartidos
 - TransparentCostDisplay: Mostrar costos justificados
@@ -1901,7 +1976,7 @@ PUT    /api/cotizaciones/:id/estatus
 - AuthForms: Login/Register con Supabase
 ```
 
-### 11.6 Roadmap de Desarrollo (8 semanas)
+### 11.7 Roadmap de Desarrollo (8 semanas)
 
 **Semana 1-2: Setup e Infraestructura**
 - Configurar Railway + Supabase
@@ -1911,9 +1986,11 @@ PUT    /api/cotizaciones/:id/estatus
 
 **Semana 3-4: Core de Costos Transparentes**
 - Crear/gestionar servicios
-- Sistema de conceptos de costo
+- Sistema de citas/procesos
+- Conceptos de costo por servicio y proceso
+- Cálculo de tiempo de viaje y costos
 - Justificaciones obligatorias
-- Calculadora de precios
+- Calculadora de precios integral
 
 **Semana 5-6: Cotizaciones**
 - Solicitar cotizaciones
@@ -1975,7 +2052,7 @@ flowchart TD
     COMP --> MAPA
 ```
 
-### 11.7 Estimación de Costos Permanentemente Gratis
+### 11.8 Estimación de Costos Permanentemente Gratis
 
 **Railway (Hobby Plan - $0/mes):**
 - 500 horas de ejecución/mes (suficiente para MVP)
@@ -1998,65 +2075,98 @@ flowchart TD
 
 **Total MVP: $0/mes permanentemente**
 
-### 11.8 Escalabilidad cuando sea Necesario
+### 11.9 Escalabilidad cuando sea Necesario
 
 **Cuando superes los límites gratuitos:**
 - Railway Pro: $20/mes (más recursos)
 - Supabase Pro: $25/mes (más DB y usuarios)
 - Pero solo cuando tengas ingresos reales
 
-### 9.45 Diagrama de MVP - Costos Transparentes
+### 9.45 Diagrama de MVP - Transparencia Total con Procesos
 
 ```mermaid
 flowchart TD
-    subgraph "MVP Fase 1: Costos Transparentes"
-        CL[Cliente Crea Evento]
-        SE[Explora Servicios]
-        VC[Ve Costos Desglosados]
-        SC[Solicita Cotización]
+    subgraph "Evento Completo"
+        EV[Evento Principal: Boda]
+        CP1[Cita: Sesión Previa]
+        CP2[Cita: Firma Contrato]
+        CP3[Cita: Entrega Final]
     end
     
-    subgraph "Proveedor: Transparencia Total"
-        CS[Crea Servicio]
-        DC[Define Conceptos Costo]
-        JU[Justifica cada Costo]
-        GC[Genera Cotización]
+    subgraph "Costos Servicio Principal"
+        MAT[Equipo: $800]
+        FOT[Fotógrafo: $1,200]
+        ASI[Asistente: $640]
+        EDI[Edición: $600]
     end
     
-    subgraph "Desglose Transparente"
-        MAT[Materiales: $500]
-        MO[Mano Obra: $800]
-        TR[Transporte: $200]
-        GAN[Ganancia: $300]
-        TOT[Total: $1,800]
+    subgraph "Costos de Procesos"
+        subgraph "Sesión Previa"
+            T1[Transporte: $150]
+            V1[Tiempo Viaje: $200]
+            S1[Sesión: $300]
+        end
+        
+        subgraph "Firma Contrato"
+            T2[Transporte: $90]
+            V2[Tiempo Viaje: $100]
+            S2[Reunión: $150]
+        end
+        
+        subgraph "Entrega Final"
+            T3[Transporte: $120]
+            V3[Tiempo Viaje: $100]
+            S3[Presentación: $300]
+        end
     end
     
-    subgraph "Stack Gratuito"
-        RW[Railway - Node.js]
-        SB[Supabase - PostgreSQL]
-        VE[Vercel - Next.js]
+    subgraph "Transparencia Total"
+        SER[Servicio: $3,240]
+        PRO[Procesos: $1,510]
+        GAN[Ganancia: $712]
+        TOT[TOTAL: $5,462]
+        HOR[38 horas reales]
+        PHR[$143.74/hora real]
     end
     
-    CL --> SE
-    SE --> VC
-    VC --> SC
+    EV --> MAT
+    EV --> FOT
+    EV --> ASI
+    EV --> EDI
     
-    CS --> DC
-    DC --> JU
-    JU --> GC
+    CP1 --> T1
+    CP1 --> V1
+    CP1 --> S1
     
-    VC --> MAT
-    VC --> MO
-    VC --> TR
-    VC --> GAN
-    MAT --> TOT
-    MO --> TOT
-    TR --> TOT
+    CP2 --> T2
+    CP2 --> V2
+    CP2 --> S2
+    
+    CP3 --> T3
+    CP3 --> V3
+    CP3 --> S3
+    
+    MAT --> SER
+    FOT --> SER
+    ASI --> SER
+    EDI --> SER
+    
+    T1 --> PRO
+    V1 --> PRO
+    S1 --> PRO
+    T2 --> PRO
+    V2 --> PRO
+    S2 --> PRO
+    T3 --> PRO
+    V3 --> PRO
+    S3 --> PRO
+    
+    SER --> TOT
+    PRO --> TOT
     GAN --> TOT
     
-    GC --> RW
-    RW --> SB
-    SC --> VE
+    TOT --> HOR
+    HOR --> PHR
 ```
 
 ### 9.46 Diagrama de Ecosistema Completo
