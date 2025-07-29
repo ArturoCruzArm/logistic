@@ -689,6 +689,103 @@ erDiagram
         enum nivel_especializacion
     }
     
+    INVITACION_INDIVIDUAL {
+        uuid id PK
+        uuid invitado_id FK
+        uuid invitacion_familiar_id FK
+        string nombre_completo
+        string codigo_personal
+        json contexto_familiar
+        json otros_familiares_invitados
+        json preferencias_personales
+        enum tipo_invitacion
+        boolean requiere_confirmacion
+        timestamp fecha_envio
+    }
+    
+    PAGINA_INVITACION_WEB {
+        uuid id PK
+        uuid evento_id FK
+        string url_personalizada
+        json diseno_personalizado
+        json informacion_evento
+        json lista_invitados_publica
+        json configuracion_privacidad
+        json galeria_imagenes
+        boolean incluye_mapa_regalos
+        int visitas_totales
+    }
+    
+    DETECCION_CONFLICTOS {
+        uuid id PK
+        uuid evento_id FK
+        enum tipo_conflicto
+        string descripcion_conflicto
+        json partes_involucradas
+        json soluciones_sugeridas
+        enum nivel_prioridad
+        enum estatus_resolucion
+        timestamp fecha_deteccion
+        uuid usuario_asignado_id FK
+    }
+    
+    RANKING_SATISFACCION {
+        uuid id PK
+        uuid proveedor_id FK
+        decimal puntuacion_promedio
+        int total_calificaciones
+        decimal indice_satisfaccion
+        json metricas_detalladas
+        int posicion_ranking
+        timestamp fecha_actualizacion
+    }
+    
+    SISTEMA_PAGOS_SIMPLE {
+        uuid id PK
+        uuid contrato_id FK
+        decimal monto_total
+        json metodos_pago_disponibles
+        enum estatus_general
+        timestamp fecha_creacion
+    }
+    
+    PAGO_PROGRAMADO {
+        uuid id PK
+        uuid sistema_pagos_id FK
+        decimal monto_pago
+        datetime fecha_programada
+        string concepto_pago
+        enum metodo_pago
+        enum estatus_pago
+        json comprobante_pago
+        string referencia_externa
+        timestamp fecha_confirmacion
+        boolean confirmado_manualmente
+        string notas_pago
+    }
+    
+    COMPROBANTE_PAGO {
+        uuid id PK
+        uuid pago_programado_id FK
+        enum tipo_comprobante
+        string numero_referencia
+        json datos_comprobante
+        string ruta_archivo
+        timestamp fecha_subida
+        uuid usuario_subida_id FK
+        boolean validado
+    }
+    
+    ACUERDO_PAGO {
+        uuid id PK
+        uuid sistema_pagos_id FK
+        json terminos_acordados
+        json participantes_acuerdo
+        json modificaciones_permitidas
+        timestamp fecha_acuerdo
+        boolean activo
+    }
+    
     SOLICITUD_COTIZACION {
         uuid id PK
         uuid evento_id FK
@@ -859,6 +956,20 @@ erDiagram
     SERVICIO ||--o{ REQUERIMIENTOS_ESPACIALES : "requiere espacio"
     
     SERVICIO ||--o{ COMPATIBILIDAD_SERVICIO : "define compatibilidad"
+    
+    INVITADO ||--o{ INVITACION_INDIVIDUAL : "recibe invitación"
+    INVITACION_FAMILIAR ||--o{ INVITACION_INDIVIDUAL : "incluye miembro"
+    
+    EVENTO ||--o{ PAGINA_INVITACION_WEB : "tiene página web"
+    
+    EVENTO ||--o{ DETECCION_CONFLICTOS : "puede tener conflictos"
+    
+    PROVEEDOR ||--o{ RANKING_SATISFACCION : "tiene ranking"
+    
+    CONTRATO ||--o{ SISTEMA_PAGOS_SIMPLE : "gestiona pagos"
+    SISTEMA_PAGOS_SIMPLE ||--o{ PAGO_PROGRAMADO : "programa pagos"
+    PAGO_PROGRAMADO ||--o{ COMPROBANTE_PAGO : "tiene comprobante"
+    SISTEMA_PAGOS_SIMPLE ||--o{ ACUERDO_PAGO : "define acuerdo"
 ```
 
 ## 4. MODELO ECONÓMICO Y SISTEMA DE COSTOS
@@ -1360,7 +1471,84 @@ sequenceDiagram
   - Zona incompatible: No mostrar
 - **Recomendaciones inteligentes** basadas en capacidad del evento
 
-### 9.34 Cálculos Logísticos Inteligentes
+### 9.34 Sistema de Invitaciones Completo
+- **Invitaciones individuales** con contexto familiar:
+  - "Estimado Juan, tú y tu familia están invitados..."
+  - Lista de otros familiares invitados
+  - Código personal para confirmación
+  - Preferencias individuales capturadas
+- **Página web completa** del evento:
+  - URL personalizada: /evento/boda-maria-jose
+  - Lista pública de invitados (configurable)
+  - Galería de fotos y videos
+  - Mapa de regalos integrado
+  - Configuración de privacidad granular
+- **Información contextual**:
+  - "Tu prima Ana y su familia también están invitados"
+  - Relaciones familiares visibles
+  - Sugerencias de coordinación entre familiares
+
+### 9.35 Sistema de Prevención de Conflictos
+- **Detección automática** de posibles conflictos:
+  - Familiares con problemas conocidos en la misma mesa
+  - Proveedores con horarios superpuestos
+  - Presupuesto insuficiente para servicios requeridos
+  - Restricciones espaciales no cumplidas
+- **Soluciones sugeridas**:
+  - Reasignación de mesas inteligente
+  - Alternativas de proveedores
+  - Ajustes de presupuesto
+  - Modificaciones de itinerario
+- **Niveles de prioridad**:
+  - Crítico: Detiene la planificación
+  - Alto: Requiere atención inmediata
+  - Medio: Recomendación de cambio
+  - Bajo: Sugerencia opcional
+
+### 9.36 Ranking por Satisfacción del Cliente
+- **Organización automática** de servicios por satisfacción:
+  - Puntuación promedio de calificaciones
+  - Índice de satisfacción ponderado
+  - Posición en ranking por categoría
+- **Métricas detalladas**:
+  - Puntualidad en entregas
+  - Calidad del servicio
+  - Comunicación con cliente
+  - Cumplimiento de acuerdos
+  - Flexibilidad ante cambios
+- **Filtros inteligentes**:
+  - Solo mostrar proveedores top 10
+  - Ocultar proveedores con satisfacción < 80%
+  - Priorizar por mejor calificación en búsquedas
+
+### 9.37 Sistema de Pagos Simplificado
+- **Métodos de pago sin complicaciones fiscales**:
+  - **Transferencias bancarias**: SPEI, CLABE
+  - **Tiendas de autocobro**: Oxxo, 7-Eleven, Soriana
+  - **Efectivo el día del evento**: Confirmación manual
+  - **Depósitos bancarios**: Con comprobante fotográfico
+- **Calendario de pagos personalizado**:
+  - 50% al contratar servicio
+  - 30% una semana antes del evento
+  - 20% el día del evento
+  - Fechas modificables por acuerdo mutuo
+- **Confirmación manual** de pagos:
+  - Cliente marca "Ya pagué" en la app
+  - Proveedor confirma "Pago recibido"
+  - Sistema actualiza estatus automáticamente
+  - Notificaciones a ambas partes
+- **Evidencia de pagos**:
+  - Subida de vouchers y comprobantes
+  - Fotos de tickets de tiendas de autocobro
+  - Referencias de transferencias
+  - Validación cruzada entre partes
+- **Flexibilidad en acuerdos**:
+  - Posposición de pagos con consentimiento
+  - Modificación de montos por cambios
+  - Acuerdos especiales documentados
+  - Historial completo de modificaciones
+
+### 9.38 Cálculos Logísticos Inteligentes
 - Distancias automáticas entre proveedor y evento
 - Costos de transporte por km
 - Tiempo de traslado y costos de combustible
@@ -1458,7 +1646,57 @@ sequenceDiagram
 - **Seguros de eventos** integrados
 - **Financiamiento** para eventos grandes
 
-### 9.35 Diagrama de Funcionalidades DIY y Presupuesto
+### 9.39 Diagrama de Sistema de Pagos Simplificado
+
+```mermaid
+flowchart TD
+    subgraph "Métodos de Pago"
+        TRANS[Transferencias SPEI]
+        TIENDA[Tiendas Autocobro]
+        EFECT[Efectivo en Evento]
+        DEPOS[Depósitos Bancarios]
+    end
+    
+    subgraph "Calendario de Pagos"
+        P1[50% al Contratar]
+        P2[30% Semana Antes]
+        P3[20% Día del Evento]
+    end
+    
+    subgraph "Confirmación Manual"
+        CLI[Cliente: "Ya Pagué"]
+        PROV[Proveedor: "Recibido"]
+        SIS[Sistema Actualiza]
+    end
+    
+    subgraph "Evidencia"
+        VOUCH[Vouchers]
+        FOTOS[Fotos Tickets]
+        REF[Referencias]
+        VALID[Validación Cruzada]
+    end
+    
+    TRANS --> P1
+    TIENDA --> P2
+    EFECT --> P3
+    
+    P1 --> CLI
+    P2 --> CLI
+    P3 --> CLI
+    
+    CLI --> PROV
+    PROV --> SIS
+    
+    SIS --> VOUCH
+    SIS --> FOTOS
+    SIS --> REF
+    
+    VOUCH --> VALID
+    FOTOS --> VALID
+    REF --> VALID
+```
+
+### 9.40 Diagrama de Funcionalidades DIY y Presupuesto
 
 ```mermaid
 flowchart TD
@@ -1506,7 +1744,7 @@ flowchart TD
     COMP --> MAPA
 ```
 
-### 9.36 Diagrama de Ecosistema Completo
+### 9.41 Diagrama de Ecosistema Completo
 
 ```mermaid
 flowchart TD
@@ -1562,7 +1800,7 @@ flowchart TD
     NT --> WA
 ```
 
-### 9.37 Diagrama de Arquitectura Offline-First
+### 9.42 Diagrama de Arquitectura Offline-First
 
 ```mermaid
 flowchart TD
@@ -1601,7 +1839,7 @@ flowchart TD
     QUEUE -->|Procesa cambios| DB
 ```
 
-### 9.38 Diagrama de Flujo de Evento Multi-etapa
+### 9.43 Diagrama de Flujo de Evento Multi-etapa
 
 ```mermaid
 flowchart TD
@@ -1639,5 +1877,5 @@ flowchart TD
 ---
 **Fecha de creación**: 29 de Julio, 2025
 **Estado**: Especificación extendida con funcionalidades avanzadas
-**Última actualización**: Apps offline-first, colaboradores multi-rol, asignación inteligente
+**Última actualización**: Sistema completo de invitaciones, pagos simplificados, prevención de conflictos
 **Próxima revisión**: Definición de MVP y APIs
