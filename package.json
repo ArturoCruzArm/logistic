@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server-production.js",
+    "start": "node server-with-auth.js",
     "dev": "nodemon server-simple.js",
     "dev:full": "nodemon server.js",
     "setup": "node scripts/complete-setup.js",
