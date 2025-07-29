@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node:*)",
+      "Bash(npm test)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(TASKKILL /F /PID 17208)",
+      "Bash(TASKKILL /IM \"node.exe\" /F)",
+      "Bash(npx create-next-app:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm init:*)",
+      "Bash(railway --version)",
+      "Bash(winget install:*)",
+      "Bash(railway login:*)",
+      "Bash(npm run setup:railway:*)",
+      "Bash(npm run setup:*)",
+      "Bash(railway service:*)",
+      "Bash(railway variables:*)"
+    ],
+    "deny": []
+  }
+}

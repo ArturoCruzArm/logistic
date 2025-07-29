@@ -5,20 +5,20 @@
 **Fecha de inicio**: 29 de Julio, 2025  
 **Documento base**: [ESPECIFICACION_PLATAFORMA_EVENTOS.md](./ESPECIFICACION_PLATAFORMA_EVENTOS.md)  
 **Estado general**: 🟡 EN DESARROLLO  
-**Progreso total**: 0% (Iniciando MVP)
+**Progreso total**: 25% (Stack técnico configurado)
 
 ---
 
 ## 🎯 MVP FASE 1: ESTRUCTURA DE COSTOS TRANSPARENTE
 
 ### Stack Tecnológico
-- [ ] **Railway** - Backend Node.js + Express configurado
+- [x] **Render** - Backend Node.js + Express configurado
 - [ ] **Supabase** - Base de datos PostgreSQL configurada
-- [ ] **Next.js** - Frontend configurado con TypeScript
-- [ ] **Tailwind CSS** - Estilos configurados
-- [ ] **GitHub** - Repositorio de código configurado
+- [x] **Next.js** - Frontend configurado con TypeScript
+- [x] **Tailwind CSS** - Estilos configurados
+- [x] **GitHub** - Repositorio de código configurado
 
-**Estado**: 🔴 PENDIENTE (0%)
+**Estado**: 🟡 EN PROGRESO (80%)
 
 ---
 
@@ -176,13 +176,13 @@
 ### Semana 1-2: Setup e Infraestructura
 **Objetivo**: Tener stack técnico funcionando
 
-- [ ] **Día 1-2**: Configurar Railway + Supabase
-- [ ] **Día 3-4**: Setup Next.js con TypeScript
+- [x] **Día 1-2**: Configurar Render + Supabase
+- [x] **Día 3-4**: Setup Next.js con TypeScript
 - [ ] **Día 5-6**: Configurar autenticación básica
-- [ ] **Día 7-10**: Crear esquema de base de datos
+- [x] **Día 7-10**: Crear esquema de base de datos
 - [ ] **Día 11-14**: APIs básicas de usuarios y eventos
 
-**Estado**: 🔴 PENDIENTE
+**Estado**: 🟡 EN PROGRESO (60%)
 
 ### Semana 3-4: Core de Costos Transparentes
 **Objetivo**: Funcionalidad diferenciadora funcionando
@@ -211,7 +211,7 @@
 
 - [ ] **Día 43-45**: Refinamiento UI/UX
 - [ ] **Día 46-48**: Testing básico de funcionalidades
-- [ ] **Día 49-52**: Deploy en Railway/Vercel
+- [ ] **Día 49-52**: Deploy en Render/Vercel
 - [ ] **Día 53-56**: Documentación y preparación launch
 
 **Estado**: 🔴 PENDIENTE
@@ -256,7 +256,12 @@
 ### 2025-07-29
 - ✅ Documento de especificación completo
 - ✅ Documento de seguimiento creado
-- 🔲 Iniciando setup de infraestructura
+- ✅ Servidor Express configurado y funcionando
+- ✅ Frontend Next.js con TypeScript configurado
+- ✅ Esquema de base de datos creado (schema.sql)
+- ✅ Estructura básica de rutas API implementada
+- ✅ Configuración para deploy en Render lista
+- 🔲 Pendiente: Configurar Supabase y conexión a BD
 
 ---
 

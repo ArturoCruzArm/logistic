@@ -1,0 +1,16 @@
+# VARIABLES DE ENTORNO PARA RENDER
+# Copiar y pegar estas variables en Render Dashboard > Environment Variables
+
+SUPABASE_URL=https://kpfpocesvtgjfrjwedmb.supabase.co
+
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZnBvY2VzdnRnamZyandlZG1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3Nzg3OTksImV4cCI6MjA2OTM1NDc5OX0.a6_t6J-IYvzHI254CKPvAGy1VR4dPUtmImJjQxFWRfc
+
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZnBvY2VzdnRnamZyandlZG1iIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mzc3ODc5OSwiZXhwIjoyMDY5MzU0Nzk5fQ.FYUlXe8rwuNDa-rDyq9Sxw5wzf_SxFTFYGr9hy_KbwI
+
+JWT_SECRET=W02QiTFvR6YHnnSwar1Y5hlY2dGsz+BDNF2WuukDKZgFvfxXS6gy/Z0hTscN/dsOiIpM1aHco+8tS0BUoyqUmQ==
+
+NODE_ENV=production
+
+PORT=10000
+
+ALLOWED_ORIGINS=https://plataforma-eventos-mvp.onrender.com

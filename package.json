@@ -1,0 +1,40 @@
+{
+  "name": "logistic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server-production.js",
+    "dev": "nodemon server-simple.js",
+    "dev:full": "nodemon server.js",
+    "setup": "node scripts/complete-setup.js",
+    "setup:render": "node scripts/setup-render.js",
+    "setup:supabase": "node scripts/setup-supabase.js",
+    "setup:env": "node scripts/update-env.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArturoCruzArm/logistic.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ArturoCruzArm/logistic/issues"
+  },
+  "homepage": "https://github.com/ArturoCruzArm/logistic#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.53.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "nodemon": "^3.1.10"
+  }
+}

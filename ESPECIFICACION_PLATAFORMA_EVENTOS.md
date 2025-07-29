@@ -1743,7 +1743,7 @@ flowchart TD
 
 ### 11.1 Stack Tecnológico Gratuito Permanente
 
-**Backend (Railway - Plan Gratuito):**
+**Backend (Render - Plan Gratuito):**
 - **Runtime**: Node.js 18+ con TypeScript
 - **Framework**: Express.js con Helmet para seguridad
 - **Base de Datos**: Supabase PostgreSQL (500MB gratis)
@@ -1968,7 +1968,7 @@ UTILIDAD POR HORA: $31.37
 ### 11.5 API Endpoints Mínimos
 
 ```javascript
-// Railway + Express.js
+// Render + Express.js
 // /api/auth/* - Manejado por Supabase
 
 // Eventos
@@ -2047,7 +2047,7 @@ PUT    /api/cotizaciones/:id/estatus
 ### 11.7 Roadmap de Desarrollo (8 semanas)
 
 **Semana 1-2: Setup e Infraestructura**
-- Configurar Railway + Supabase
+- Configurar Render + Supabase
 - Setup Next.js + TypeScript
 - Implementar autenticación básica
 - Crear esquema de base de datos
@@ -2071,7 +2071,7 @@ PUT    /api/cotizaciones/:id/estatus
 **Semana 7-8: Pulimiento y Deploy**
 - UI/UX refinement
 - Testing básico
-- Deploy en Railway/Vercel
+- Deploy en Render/Vercel
 - Documentación
 
 ### 9.44 Diagrama de Funcionalidades DIY y Presupuesto
@@ -2124,11 +2124,11 @@ flowchart TD
 
 ### 11.8 Estimación de Costos Permanentemente Gratis
 
-**Railway (Hobby Plan - $0/mes):**
-- 500 horas de ejecución/mes (suficiente para MVP)
-- 1GB RAM, 1 vCPU
-- 1GB storage
+**Render (Free Tier - $0/mes):**
+- 750 horas de ejecución/mes (suficiente para MVP)
+- 512MB RAM, compartido vCPU
 - Deploy automático desde GitHub
+- SSL gratuito incluido
 
 **Supabase (Free Tier - $0/mes):**
 - 500MB base de datos PostgreSQL
@@ -2148,7 +2148,7 @@ flowchart TD
 ### 11.9 Escalabilidad cuando sea Necesario
 
 **Cuando superes los límites gratuitos:**
-- Railway Pro: $20/mes (más recursos)
+- Render Starter: $7/mes (más recursos)
 - Supabase Pro: $25/mes (más DB y usuarios)
 - Pero solo cuando tengas ingresos reales
 
