@@ -1548,7 +1548,50 @@ sequenceDiagram
   - Acuerdos especiales documentados
   - Historial completo de modificaciones
 
-### 9.38 Cálculos Logísticos Inteligentes
+### 9.38 Integraciones con Aplicaciones Existentes
+
+**Herramientas de Planificación de Eventos:**
+- **Eventbrite**: Importación de eventos existentes, sincronización de invitados
+- **Trello**: Integración de tableros de planificación como tareas de preparativos
+- **Asana**: Importación de cronogramas y asignación de responsabilidades
+- **Monday.com**: Sincronización de timelines y status de tareas
+
+**Herramientas de Comunicación:**
+- **WhatsApp Business API**: Notificaciones automáticas y confirmaciones
+- **Telegram Bot**: Canal de comunicación alternativo
+- **Slack**: Integración para equipos organizadores profesionales
+- **Microsoft Teams**: Colaboración empresarial para eventos corporativos
+
+**Herramientas Financieras:**
+- **QuickBooks**: Exportación de facturas y control de gastos
+- **Excel/Google Sheets**: Exportación de reportes financieros
+- **Stripe**: Procesamiento de pagos online (cuando sea necesario)
+- **PayPal**: Alternativa de pagos internacionales
+
+**Herramientas de Diseño:**
+- **Canva**: Plantillas para invitaciones y materiales gráficos
+- **Adobe Creative Suite**: Integración para diseñadores profesionales
+- **Figma**: Colaboración en diseños de eventos
+
+**Calendarios y Programación:**
+- **Google Calendar**: Sincronización automática de eventos y recordatorios
+- **Outlook Calendar**: Integración empresarial
+- **Apple Calendar**: Sincronización para usuarios iOS
+- **Calendly**: Programación de reuniones con proveedores
+
+**Redes Sociales y Marketing:**
+- **Instagram**: Compartir galerías de eventos completados
+- **Facebook Events**: Creación y promoción de eventos públicos
+- **TikTok**: Contenido viral de eventos
+- **Pinterest**: Inspiración y boards de ideas
+
+**Herramientas de Productividad:**
+- **Notion**: Importación de bases de datos de planificación
+- **Airtable**: Sincronización de bases de datos de contactos
+- **Zapier**: Automatización de workflows entre aplicaciones
+- **IFTTT**: Integraciones simples y automatizaciones
+
+### 9.39 Cálculos Logísticos Inteligentes
 - Distancias automáticas entre proveedor y evento
 - Costos de transporte por km
 - Tiempo de traslado y costos de combustible
@@ -1696,7 +1739,195 @@ flowchart TD
     REF --> VALID
 ```
 
-### 9.40 Diagrama de Funcionalidades DIY y Presupuesto
+## 11. PLAN DE IMPLEMENTACIÓN MVP - ESTRUCTURA DE COSTOS TRANSPARENTE
+
+### 11.1 Stack Tecnológico Gratuito Permanente
+
+**Backend (Railway - Plan Gratuito):**
+- **Runtime**: Node.js 18+ con TypeScript
+- **Framework**: Express.js con Helmet para seguridad
+- **Base de Datos**: Supabase PostgreSQL (500MB gratis)
+- **Autenticación**: Supabase Auth (50,000 usuarios gratis)
+- **Storage**: Supabase Storage (1GB gratis)
+- **Real-time**: Supabase Realtime incluido
+
+**Frontend (Vercel/Netlify - Gratis):**
+- **Framework**: Next.js 14 con TypeScript
+- **UI**: Tailwind CSS + Shadcn/ui
+- **Estado**: Zustand (más ligero que Redux)
+- **Forms**: React Hook Form + Zod validation
+
+**Servicios Externos Gratuitos:**
+- **Maps**: Google Maps (200 USD/mes gratis)
+- **Email**: Resend (3,000 emails/mes gratis)
+- **Monitoring**: Sentry (5,000 errores/mes gratis)
+- **Analytics**: Umami (self-hosted gratuito)
+
+### 11.2 MVP Fase 1: Calculadora de Costos Transparente
+
+**Entidades Mínimas para MVP:**
+```sql
+-- Supabase Schema
+CREATE TABLE usuarios (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  nombre_completo VARCHAR(255) NOT NULL,
+  tipo_usuario VARCHAR(50) NOT NULL, -- 'cliente', 'proveedor'
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE eventos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cliente_id UUID REFERENCES usuarios(id),
+  nombre VARCHAR(255) NOT NULL,
+  fecha_evento DATE NOT NULL,
+  invitados_estimados INTEGER NOT NULL,
+  presupuesto_total DECIMAL(10,2),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE categorias_servicio (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre VARCHAR(255) NOT NULL,
+  descripcion TEXT,
+  icono VARCHAR(100)
+);
+
+CREATE TABLE servicios (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  proveedor_id UUID REFERENCES usuarios(id),
+  categoria_id UUID REFERENCES categorias_servicio(id),
+  nombre VARCHAR(255) NOT NULL,
+  descripcion TEXT,
+  precio_base DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE conceptos_costo (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  servicio_id UUID REFERENCES servicios(id),
+  descripcion VARCHAR(255) NOT NULL,
+  costo_unitario DECIMAL(10,2) NOT NULL,
+  cantidad INTEGER DEFAULT 1,
+  tipo_costo VARCHAR(50) NOT NULL, -- 'materiales', 'mano_obra', 'transporte', 'ganancia'
+  justificacion TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE cotizaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  evento_id UUID REFERENCES eventos(id),
+  servicio_id UUID REFERENCES servicios(id),
+  precio_total DECIMAL(10,2) NOT NULL,
+  desglose_costos JSONB NOT NULL,
+  estatus VARCHAR(50) DEFAULT 'pendiente',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### 11.3 Funcionalidades MVP Mínimas
+
+**Para Clientes:**
+1. **Registro/Login** con Supabase Auth
+2. **Crear evento básico** (nombre, fecha, # invitados, presupuesto)
+3. **Explorar servicios** por categoría
+4. **Ver desglose de costos** transparente por servicio
+5. **Solicitar cotización** con requerimientos específicos
+6. **Comparar cotizaciones** lado a lado
+
+**Para Proveedores:**
+1. **Registro/Login** con perfil de negocio
+2. **Crear servicios** con descripción y precio base
+3. **Definir conceptos de costo** detallados:
+   - Materiales: $X (Flores, decoración, etc.)
+   - Mano de obra: $X (2 personas x 4 horas)
+   - Transporte: $X (Gasolina + tiempo traslado)
+   - Ganancia: $X (Margen 20%)
+   - **Justificación obligatoria** para cada concepto
+4. **Generar cotizaciones** automáticas
+5. **Dashboard básico** de cotizaciones enviadas
+
+### 11.4 API Endpoints Mínimos
+
+```javascript
+// Railway + Express.js
+// /api/auth/* - Manejado por Supabase
+
+// Eventos
+GET    /api/eventos
+POST   /api/eventos
+GET    /api/eventos/:id
+PUT    /api/eventos/:id
+
+// Servicios
+GET    /api/servicios
+POST   /api/servicios
+GET    /api/servicios/:id
+GET    /api/servicios/categoria/:categoriaId
+
+// Conceptos de Costo
+GET    /api/servicios/:id/conceptos-costo
+POST   /api/servicios/:id/conceptos-costo
+PUT    /api/conceptos-costo/:id
+DELETE /api/conceptos-costo/:id
+
+// Cotizaciones
+POST   /api/cotizaciones
+GET    /api/cotizaciones/evento/:eventoId
+GET    /api/cotizaciones/proveedor/:proveedorId
+PUT    /api/cotizaciones/:id/estatus
+```
+
+### 11.5 Componentes Frontend Clave
+
+```typescript
+// Next.js + TypeScript + Tailwind
+
+// Para Clientes
+- EventCreationForm: Crear evento con presupuesto
+- ServiceExplorer: Explorar servicios por categoría
+- CostBreakdownViewer: Ver desglose transparente
+- QuoteComparison: Comparar cotizaciones lado a lado
+
+// Para Proveedores
+- ServiceCreationForm: Crear servicio con conceptos
+- CostItemManager: Gestionar conceptos de costo
+- JustificationEditor: Explicar cada costo
+- QuoteGenerator: Generar cotizaciones automáticas
+
+// Compartidos
+- TransparentCostDisplay: Mostrar costos justificados
+- Dashboard: Panel principal por tipo de usuario
+- AuthForms: Login/Register con Supabase
+```
+
+### 11.6 Roadmap de Desarrollo (8 semanas)
+
+**Semana 1-2: Setup e Infraestructura**
+- Configurar Railway + Supabase
+- Setup Next.js + TypeScript
+- Implementar autenticación básica
+- Crear esquema de base de datos
+
+**Semana 3-4: Core de Costos Transparentes**
+- Crear/gestionar servicios
+- Sistema de conceptos de costo
+- Justificaciones obligatorias
+- Calculadora de precios
+
+**Semana 5-6: Cotizaciones**
+- Solicitar cotizaciones
+- Generar cotizaciones automáticas
+- Comparador de cotizaciones
+- Dashboard básico
+
+**Semana 7-8: Pulimiento y Deploy**
+- UI/UX refinement
+- Testing básico
+- Deploy en Railway/Vercel
+- Documentación
+
+### 9.44 Diagrama de Funcionalidades DIY y Presupuesto
 
 ```mermaid
 flowchart TD
@@ -1744,7 +1975,91 @@ flowchart TD
     COMP --> MAPA
 ```
 
-### 9.41 Diagrama de Ecosistema Completo
+### 11.7 Estimación de Costos Permanentemente Gratis
+
+**Railway (Hobby Plan - $0/mes):**
+- 500 horas de ejecución/mes (suficiente para MVP)
+- 1GB RAM, 1 vCPU
+- 1GB storage
+- Deploy automático desde GitHub
+
+**Supabase (Free Tier - $0/mes):**
+- 500MB base de datos PostgreSQL
+- 50,000 usuarios autenticados
+- 1GB storage para archivos
+- 2GB transferencia/mes
+- Real-time subscriptions incluidas
+
+**Servicios Adicionales Gratuitos:**
+- Vercel/Netlify: Frontend hosting gratis
+- Google Maps: $200 crédito mensual
+- Resend: 3,000 emails/mes
+- GitHub: Repositorios ilimitados
+
+**Total MVP: $0/mes permanentemente**
+
+### 11.8 Escalabilidad cuando sea Necesario
+
+**Cuando superes los límites gratuitos:**
+- Railway Pro: $20/mes (más recursos)
+- Supabase Pro: $25/mes (más DB y usuarios)
+- Pero solo cuando tengas ingresos reales
+
+### 9.45 Diagrama de MVP - Costos Transparentes
+
+```mermaid
+flowchart TD
+    subgraph "MVP Fase 1: Costos Transparentes"
+        CL[Cliente Crea Evento]
+        SE[Explora Servicios]
+        VC[Ve Costos Desglosados]
+        SC[Solicita Cotización]
+    end
+    
+    subgraph "Proveedor: Transparencia Total"
+        CS[Crea Servicio]
+        DC[Define Conceptos Costo]
+        JU[Justifica cada Costo]
+        GC[Genera Cotización]
+    end
+    
+    subgraph "Desglose Transparente"
+        MAT[Materiales: $500]
+        MO[Mano Obra: $800]
+        TR[Transporte: $200]
+        GAN[Ganancia: $300]
+        TOT[Total: $1,800]
+    end
+    
+    subgraph "Stack Gratuito"
+        RW[Railway - Node.js]
+        SB[Supabase - PostgreSQL]
+        VE[Vercel - Next.js]
+    end
+    
+    CL --> SE
+    SE --> VC
+    VC --> SC
+    
+    CS --> DC
+    DC --> JU
+    JU --> GC
+    
+    VC --> MAT
+    VC --> MO
+    VC --> TR
+    VC --> GAN
+    MAT --> TOT
+    MO --> TOT
+    TR --> TOT
+    GAN --> TOT
+    
+    GC --> RW
+    RW --> SB
+    SC --> VE
+```
+
+### 9.46 Diagrama de Ecosistema Completo
 
 ```mermaid
 flowchart TD
@@ -1800,7 +2115,7 @@ flowchart TD
     NT --> WA
 ```
 
-### 9.42 Diagrama de Arquitectura Offline-First
+### 9.47 Diagrama de Arquitectura Offline-First
 
 ```mermaid
 flowchart TD
@@ -1839,7 +2154,7 @@ flowchart TD
     QUEUE -->|Procesa cambios| DB
 ```
 
-### 9.43 Diagrama de Flujo de Evento Multi-etapa
+### 9.48 Diagrama de Flujo de Evento Multi-etapa
 
 ```mermaid
 flowchart TD
