@@ -122,338 +122,419 @@ graph TB
 
 ```mermaid
 erDiagram
-    USER {
+    USUARIO {
         uuid id PK
-        string email UK
-        string password_hash
-        string first_name
-        string last_name
-        string phone
-        string profile_image
-        enum user_type
-        json social_auth
-        timestamp created_at
-        timestamp updated_at
-        boolean is_active
+        string correo_electronico UK
+        string hash_contrasena
+        string primer_nombre
+        string apellido_paterno
+        string telefono
+        string imagen_perfil
+        enum tipo_usuario
+        json autenticacion_social
+        timestamp fecha_creacion
+        timestamp fecha_actualizacion
+        boolean esta_activo
     }
     
-    CLIENT {
+    CLIENTE {
         uuid id PK
-        uuid user_id FK
-        string company_name
-        json preferences
-        json billing_info
+        uuid usuario_id FK
+        string nombre_empresa
+        json preferencias
+        json informacion_facturacion
     }
     
-    PROVIDER {
+    PROVEEDOR {
         uuid id PK
-        uuid user_id FK
-        string business_name
-        string business_license
-        string tax_id
-        json business_info
-        decimal rating
-        int total_reviews
-        enum verification_status
-        json portfolio
-        json business_location
+        uuid usuario_id FK
+        string nombre_negocio
+        string licencia_comercial
+        string numero_fiscal
+        json informacion_negocio
+        decimal calificacion
+        int total_resenas
+        enum estatus_verificacion
+        json portafolio
+        json ubicacion_negocio
+        boolean es_multiservicios
+        json tipos_costo_persona
     }
     
-    EVENT {
+    EVENTO {
         uuid id PK
-        uuid client_id FK
-        string name
-        text description
-        datetime start_date
-        datetime end_date
-        int estimated_guests
-        decimal budget_min
-        decimal budget_max
-        enum event_type
-        enum status
-        json requirements
-        json main_celebrants
-        timestamp created_at
+        uuid cliente_id FK
+        string nombre
+        text descripcion
+        datetime fecha_inicio
+        datetime fecha_fin
+        int invitados_estimados
+        decimal presupuesto_minimo
+        decimal presupuesto_maximo
+        enum tipo_evento
+        enum estatus
+        json requerimientos
+        json festejados_principales
+        json configuracion_privacidad
+        timestamp fecha_creacion
     }
     
-    EVENT_STAGE {
+    ETAPA_EVENTO {
         uuid id PK
-        uuid event_id FK
-        string name
-        text description
-        enum stage_type
-        int sequence_order
-        boolean is_active
+        uuid evento_id FK
+        string nombre
+        text descripcion
+        enum tipo_etapa
+        int orden_secuencia
+        boolean esta_activa
     }
     
-    EVENT_LOCATION {
+    UBICACION_EVENTO {
         uuid id PK
-        uuid event_stage_id FK
-        string name
-        string address
-        decimal latitude
-        decimal longitude
-        json maps_data
-        datetime start_time
-        datetime end_time
-        json facilities
-        json access_instructions
+        uuid etapa_evento_id FK
+        string nombre
+        string direccion
+        decimal latitud
+        decimal longitud
+        json datos_mapa
+        datetime hora_inicio
+        datetime hora_fin
+        json instalaciones
+        json instrucciones_acceso
+        json diseno_salon
+        int capacidad_maxima
     }
     
-    SERVICE_CATEGORY {
+    CATEGORIA_SERVICIO {
         uuid id PK
-        string name
-        string description
-        string icon
-        int sort_order
-        boolean is_active
+        string nombre
+        string descripcion
+        string icono
+        int orden_clasificacion
+        boolean esta_activa
     }
     
-    SERVICE {
+    SERVICIO {
         uuid id PK
-        uuid provider_id FK
-        uuid category_id FK
-        string name
-        text description
-        json pricing_model
-        json availability
-        json portfolio_images
-        json specifications
-        boolean is_active
-        boolean has_products
+        uuid proveedor_id FK
+        uuid categoria_id FK
+        uuid cliente_creador_id FK
+        string nombre
+        text descripcion
+        json modelo_precios
+        json disponibilidad
+        json imagenes_portafolio
+        json especificaciones
+        boolean esta_activo
+        boolean tiene_productos
+        boolean es_personalizado
+        enum tipo_costo
     }
     
-    PRODUCT {
+    PRODUCTO {
         uuid id PK
-        uuid service_id FK
-        uuid supplier_id FK
-        string name
-        text description
-        decimal base_cost
-        decimal markup_percentage
-        json specifications
-        string unit_measure
-        int stock_quantity
-        boolean is_active
+        uuid servicio_id FK
+        uuid proveedor_suministro_id FK
+        string nombre
+        text descripcion
+        decimal costo_base
+        decimal porcentaje_ganancia
+        json especificaciones
+        string unidad_medida
+        int cantidad_inventario
+        boolean esta_activo
+        json escala_costo_persona
     }
     
-    SUPPLIER {
+    PROVEEDOR_SUMINISTRO {
         uuid id PK
-        uuid provider_id FK
-        string name
-        string contact_info
-        json address
-        json terms_conditions
-        decimal rating
+        uuid proveedor_id FK
+        string nombre
+        string informacion_contacto
+        json direccion
+        json terminos_condiciones
+        decimal calificacion
     }
     
-    ITINERARY {
+    ITINERARIO {
         uuid id PK
-        uuid event_location_id FK
-        uuid service_id FK
-        string activity_name
-        text description
-        datetime start_time
-        datetime end_time
-        json participants
-        json requirements
-        enum status
-        int priority_order
+        uuid ubicacion_evento_id FK
+        uuid servicio_id FK
+        string nombre_actividad
+        text descripcion
+        datetime hora_inicio
+        datetime hora_fin
+        json participantes
+        json requerimientos
+        enum estatus
+        int orden_prioridad
     }
     
-    GUEST {
+    INVITADO {
         uuid id PK
-        uuid event_id FK
-        string first_name
-        string last_name
-        string email
-        string phone
-        json address
-        enum invitation_status
-        enum attendance_status
-        json dietary_restrictions
-        json special_needs
-        json social_profile
-        enum honor_mention_type
-        uuid assigned_table_id FK
-        int social_proximity_score
-        timestamp invited_at
-        timestamp responded_at
+        uuid evento_id FK
+        string primer_nombre
+        string apellido_paterno
+        string correo_electronico
+        string telefono
+        json direccion
+        enum estatus_invitacion
+        enum estatus_asistencia
+        json restricciones_dieteticas
+        json necesidades_especiales
+        json perfil_social
+        enum tipo_mencion_honor
+        uuid mesa_asignada_id FK
+        int puntuacion_proximidad_social
+        timestamp fecha_invitacion
+        timestamp fecha_respuesta
     }
     
-    EVENT_COLLABORATOR {
+    COLABORADOR_EVENTO {
         uuid id PK
-        uuid event_id FK
-        uuid user_id FK
-        enum role_type
-        json permissions
-        enum collaboration_status
-        timestamp invited_at
-        timestamp accepted_at
-        boolean is_owner
+        uuid evento_id FK
+        uuid usuario_id FK
+        enum tipo_rol
+        json permisos
+        enum estatus_colaboracion
+        timestamp fecha_invitacion
+        timestamp fecha_aceptacion
+        boolean es_propietario
     }
     
-    TABLE_ASSIGNMENT {
+    ASIGNACION_MESA {
         uuid id PK
-        uuid event_location_id FK
-        string table_name
-        int capacity
-        json table_position
-        json assigned_guests
-        decimal social_cohesion_score
+        uuid ubicacion_evento_id FK
+        string nombre_mesa
+        int capacidad
+        json posicion_mesa
+        json invitados_asignados
+        decimal puntuacion_cohesion_social
+        enum tipo_mesa
+        json configuracion_visual
     }
     
-    QUOTE_TEMPLATE {
+    PLANTILLA_COTIZACION {
         uuid id PK
-        uuid provider_id FK
-        string template_name
-        enum event_type
-        int min_guests
-        int max_guests
-        json pre_configured_items
-        json pricing_structure
-        boolean is_active
-        timestamp created_at
+        uuid proveedor_id FK
+        string nombre_plantilla
+        enum tipo_evento
+        int minimo_invitados
+        int maximo_invitados
+        json conceptos_preconfigurados
+        json estructura_precios
+        boolean esta_activa
+        timestamp fecha_creacion
     }
     
-    SYNC_QUEUE {
+    COLA_SINCRONIZACION {
         uuid id PK
-        uuid user_id FK
-        string entity_type
-        uuid entity_id
-        enum action_type
-        json data_payload
-        enum sync_status
-        timestamp created_at
-        timestamp synced_at
-        int retry_count
+        uuid usuario_id FK
+        string tipo_entidad
+        uuid entidad_id
+        enum tipo_accion
+        json datos_carga
+        enum estatus_sincronizacion
+        timestamp fecha_creacion
+        timestamp fecha_sincronizacion
+        int contador_reintentos
     }
     
-    FAMILY_RELATIONSHIP {
+    PARENTESCO_FAMILIAR {
         uuid id PK
-        uuid guest_id FK
-        uuid celebrant_id FK
-        enum relationship_type
-        string relationship_description
-        int generation_level
+        uuid invitado_id FK
+        uuid festejado_id FK
+        enum tipo_parentesco
+        string descripcion_parentesco
+        int nivel_generacional
     }
     
-    QUOTE_REQUEST {
+    INVITACION_DIGITAL {
         uuid id PK
-        uuid event_id FK
-        uuid service_id FK
-        uuid event_location_id FK
-        json custom_requirements
-        json selected_products
-        enum status
-        timestamp requested_at
+        uuid evento_id FK
+        string titulo
+        text mensaje_personalizado
+        json diseno_plantilla
+        json informacion_publica
+        json informacion_privada
+        string enlace_web
+        string ruta_pdf
+        json configuracion_privacidad
+        timestamp fecha_creacion
     }
     
-    QUOTE {
+    HISTORIAL_PAGOS {
         uuid id PK
-        uuid quote_request_id FK
-        uuid provider_id FK
-        decimal base_price
-        json cost_breakdown
-        json logistics_costs
-        json terms_conditions
-        datetime valid_until
-        enum status
-        timestamp created_at
+        uuid contrato_id FK
+        decimal monto
+        enum metodo_pago
+        enum estatus_pago
+        string referencia_transaccion
+        timestamp fecha_pago
+        json comprobante_pago
     }
     
-    CONTRACT {
+    EVIDENCIA_ETAPA {
         uuid id PK
-        uuid quote_id FK
-        uuid event_id FK
-        json terms
-        decimal total_amount
-        json payment_schedule
-        enum status
-        timestamp signed_at
+        uuid contrato_id FK
+        uuid etapa_evento_id FK
+        string titulo
+        text descripcion
+        json archivos_multimedia
+        enum tipo_evidencia
+        timestamp fecha_subida
+        uuid usuario_subida_id FK
     }
     
-    COST_ITEM {
+    FICHA_TECNICA_PROVEEDOR {
         uuid id PK
-        uuid quote_id FK
-        uuid product_id FK
-        string description
-        decimal unit_cost
-        int quantity
-        decimal transport_cost
-        decimal storage_cost
-        decimal labor_cost
-        decimal total_cost
-        string justification
-        enum cost_type
+        uuid proveedor_id FK
+        json experiencia_anos
+        json certificaciones
+        json trabajos_anteriores
+        json galeria_proyectos
+        json especialidades
+        json areas_cobertura
+        timestamp fecha_actualizacion
     }
     
-    LOGISTICS_CALCULATION {
+    REPORTE_PERSONALIZADO {
         uuid id PK
-        uuid quote_id FK
-        decimal distance_km
-        decimal fuel_cost
-        decimal time_cost
-        decimal vehicle_cost
-        json route_data
-        timestamp calculated_at
+        uuid evento_id FK
+        uuid usuario_generador_id FK
+        string nombre_reporte
+        json configuracion_datos
+        json filtros_aplicados
+        enum formato_exportacion
+        timestamp fecha_generacion
+        string ruta_archivo
     }
     
-    REVIEW {
+    SOLICITUD_COTIZACION {
         uuid id PK
-        uuid contract_id FK
-        uuid client_id FK
-        uuid provider_id FK
-        int rating
-        text comment
-        json photos
-        timestamp created_at
+        uuid evento_id FK
+        uuid servicio_id FK
+        uuid ubicacion_evento_id FK
+        json requerimientos_personalizados
+        json productos_seleccionados
+        enum estatus
+        timestamp fecha_solicitud
     }
     
-    USER ||--o{ CLIENT : "puede ser"
-    USER ||--o{ PROVIDER : "puede ser"
-    CLIENT ||--o{ EVENT : "crea"
+    COTIZACION {
+        uuid id PK
+        uuid solicitud_cotizacion_id FK
+        uuid proveedor_id FK
+        decimal precio_base
+        json desglose_costos
+        json costos_logisticos
+        json terminos_condiciones
+        datetime valida_hasta
+        enum estatus
+        timestamp fecha_creacion
+    }
     
-    EVENT ||--o{ EVENT_STAGE : "tiene"
-    EVENT_STAGE ||--o{ EVENT_LOCATION : "se realiza en"
+    CONTRATO {
+        uuid id PK
+        uuid cotizacion_id FK
+        uuid evento_id FK
+        json terminos
+        decimal monto_total
+        json cronograma_pagos
+        enum estatus
+        timestamp fecha_firma
+        json evidencias_cumplimiento
+    }
     
-    EVENT ||--o{ GUEST : "invita"
-    GUEST ||--o{ FAMILY_RELATIONSHIP : "tiene parentesco"
+    CONCEPTO_COSTO {
+        uuid id PK
+        uuid cotizacion_id FK
+        uuid producto_id FK
+        string descripcion
+        decimal costo_unitario
+        int cantidad
+        decimal costo_transporte
+        decimal costo_almacenamiento
+        decimal costo_mano_obra
+        decimal costo_total
+        string justificacion
+        enum tipo_costo
+    }
     
-    EVENT_LOCATION ||--o{ ITINERARY : "programa"
-    SERVICE ||--o{ ITINERARY : "participa en"
+    CALCULO_LOGISTICO {
+        uuid id PK
+        uuid cotizacion_id FK
+        decimal distancia_km
+        decimal costo_combustible
+        decimal costo_tiempo
+        decimal costo_vehiculo
+        json datos_ruta
+        timestamp fecha_calculo
+    }
     
-    PROVIDER ||--o{ SERVICE : "ofrece"
-    PROVIDER ||--o{ SUPPLIER : "trabaja con"
-    SERVICE ||--o{ PRODUCT : "incluye"
-    SUPPLIER ||--o{ PRODUCT : "suministra"
+    RESENA {
+        uuid id PK
+        uuid contrato_id FK
+        uuid cliente_id FK
+        uuid proveedor_id FK
+        int calificacion
+        text comentario
+        json fotos
+        timestamp fecha_creacion
+    }
     
-    SERVICE_CATEGORY ||--o{ SERVICE : "categoriza"
+    USUARIO ||--o{ CLIENTE : "puede ser"
+    USUARIO ||--o{ PROVEEDOR : "puede ser"
+    CLIENTE ||--o{ EVENTO : "crea"
     
-    EVENT ||--o{ QUOTE_REQUEST : "genera"
-    SERVICE ||--o{ QUOTE_REQUEST : "recibe"
-    EVENT_LOCATION ||--o{ QUOTE_REQUEST : "especifica lugar"
+    EVENTO ||--o{ ETAPA_EVENTO : "tiene"
+    ETAPA_EVENTO ||--o{ UBICACION_EVENTO : "se realiza en"
     
-    QUOTE_REQUEST ||--o{ QUOTE : "genera"
-    QUOTE ||--o{ CONTRACT : "se convierte en"
+    EVENTO ||--o{ INVITADO : "invita"
+    INVITADO ||--o{ PARENTESCO_FAMILIAR : "tiene parentesco"
     
-    QUOTE ||--o{ COST_ITEM : "detalla"
-    PRODUCT ||--o{ COST_ITEM : "incluido en"
+    UBICACION_EVENTO ||--o{ ITINERARIO : "programa"
+    SERVICIO ||--o{ ITINERARIO : "participa en"
     
-    QUOTE ||--o{ LOGISTICS_CALCULATION : "calcula"
+    PROVEEDOR ||--o{ SERVICIO : "ofrece"
+    CLIENTE ||--o{ SERVICIO : "personaliza"
+    PROVEEDOR ||--o{ PROVEEDOR_SUMINISTRO : "trabaja con"
+    SERVICIO ||--o{ PRODUCTO : "incluye"
+    PROVEEDOR_SUMINISTRO ||--o{ PRODUCTO : "suministra"
     
-    CONTRACT ||--o{ REVIEW : "puede tener"
+    CATEGORIA_SERVICIO ||--o{ SERVICIO : "categoriza"
     
-    EVENT ||--o{ EVENT_COLLABORATOR : "tiene colaboradores"
-    USER ||--o{ EVENT_COLLABORATOR : "colabora en"
+    EVENTO ||--o{ SOLICITUD_COTIZACION : "genera"
+    SERVICIO ||--o{ SOLICITUD_COTIZACION : "recibe"
+    UBICACION_EVENTO ||--o{ SOLICITUD_COTIZACION : "especifica lugar"
     
-    EVENT_LOCATION ||--o{ TABLE_ASSIGNMENT : "organiza mesas"
-    GUEST ||--o{ TABLE_ASSIGNMENT : "asignado a"
+    SOLICITUD_COTIZACION ||--o{ COTIZACION : "genera"
+    COTIZACION ||--o{ CONTRATO : "se convierte en"
     
-    PROVIDER ||--o{ QUOTE_TEMPLATE : "crea plantillas"
-    QUOTE_TEMPLATE ||--o{ QUOTE : "genera desde"
+    COTIZACION ||--o{ CONCEPTO_COSTO : "detalla"
+    PRODUCTO ||--o{ CONCEPTO_COSTO : "incluido en"
     
-    USER ||--o{ SYNC_QUEUE : "genera cambios offline"
+    COTIZACION ||--o{ CALCULO_LOGISTICO : "calcula"
+    
+    CONTRATO ||--o{ RESENA : "puede tener"
+    CONTRATO ||--o{ HISTORIAL_PAGOS : "registra pagos"
+    CONTRATO ||--o{ EVIDENCIA_ETAPA : "documenta progreso"
+    
+    EVENTO ||--o{ COLABORADOR_EVENTO : "tiene colaboradores"
+    USUARIO ||--o{ COLABORADOR_EVENTO : "colabora en"
+    
+    UBICACION_EVENTO ||--o{ ASIGNACION_MESA : "organiza mesas"
+    INVITADO ||--o{ ASIGNACION_MESA : "asignado a"
+    
+    PROVEEDOR ||--o{ PLANTILLA_COTIZACION : "crea plantillas"
+    PLANTILLA_COTIZACION ||--o{ COTIZACION : "genera desde"
+    
+    USUARIO ||--o{ COLA_SINCRONIZACION : "genera cambios offline"
+    
+    EVENTO ||--o{ INVITACION_DIGITAL : "tiene invitación"
+    PROVEEDOR ||--o{ FICHA_TECNICA_PROVEEDOR : "tiene ficha"
+    EVENTO ||--o{ REPORTE_PERSONALIZADO : "genera reportes"
+    USUARIO ||--o{ REPORTE_PERSONALIZADO : "crea reportes"
 ```
 
 ## 4. MODELO ECONÓMICO Y SISTEMA DE COSTOS
@@ -634,7 +715,15 @@ sequenceDiagram
 - Integración con Google Maps para rutas
 - Horarios superpuestos y actividades simultáneas
 
-### 9.2 Aplicaciones Móviles Offline-First
+### 9.2 Servicios Personalizados por Cliente
+- **Cliente puede agregar servicios no existentes** en la plataforma
+- **Servicios sin proveedor asignado** - cliente define especificaciones
+- **Servicios independientes** para eventos personalizados
+- **Cada servicio genera sus propias cotizaciones** y contratos
+- **Invitación de usuarios externos** para asumir roles
+- **Gestión independiente** por servicio
+
+### 9.3 Aplicaciones Móviles Offline-First
 - **Funcionalidad completa sin internet**
 - **Base de datos local**: SQLite en móvil
 - **Sincronización inteligente**: 
@@ -644,7 +733,7 @@ sequenceDiagram
 - **Cache local**: Imágenes, mapas, cotizaciones
 - **Notificaciones push** cuando se recupera conexión
 
-### 9.3 Sistema de Colaboradores Multi-Rol
+### 9.4 Sistema de Colaboradores Multi-Rol
 - **Roles flexibles**:
   - Cliente → Organizador de eventos
   - Proveedor → Organizador profesional
@@ -654,7 +743,14 @@ sequenceDiagram
 - **Colaboración en tiempo real** con conflictos resueltos
 - **Historial de cambios** por colaborador
 
-### 9.4 Asignación Inteligente de Mesas
+### 9.5 Diseñador de Salones y Asignación de Mesas
+- **Editor visual de salones** con herramientas de diseño
+- **Biblioteca de tipos de mesa** (redonda, rectangular, alta)
+- **Configuración de capacidad** por tipo de mesa
+- **Vista previa 3D** del salón con realidad aumentada
+- **Guardado de plantillas** de diseño por salón
+
+### 9.6 Asignación Inteligente de Mesas
 - **Algoritmo de proximidad social**:
   - Relación genealógica (familia cercana junta)
   - Afinidad sentimental (parejas, amigos íntimos)
@@ -664,7 +760,16 @@ sequenceDiagram
 - **Optimización automática** con machine learning
 - **Vista previa 3D** del salón con disposición
 
-### 9.5 Cotizaciones Pre-estructuradas
+### 9.7 Proveedores Multiservicios
+- **Proveedores que incluyen todo** (mobiliario + banquete + decoración)
+- **Costos por persona escalonados**:
+  - 1-50 personas: $100 c/u
+  - 51-100 personas: $90 c/u  
+  - 101+ personas: $80 c/u
+- **Paquetes all-inclusive** con precio fijo
+- **Negociación por volumen** automática
+
+### 9.8 Cotizaciones Pre-estructuradas
 - **Plantillas por tipo de evento**:
   - Boda (50-500 invitados)
   - XV Años (30-300 invitados)
@@ -673,20 +778,60 @@ sequenceDiagram
 - **Escalamiento automático** según cantidad de invitados
 - **Personalización rápida** desde plantilla base
 
-### 9.6 Gestión Avanzada de Invitados
+### 9.9 Invitaciones Digitales Inteligentes
+- **Invitaciones web responsivas** con enlace personalizado
+- **Generación automática de PDFs** con diseño personalizado
+- **Información pública del evento**:
+  - Itinerario general
+  - Ubicaciones con mapas
+  - Mesa de regalos
+  - Galería de fotos
+  - Código de vestimenta
+- **Información privada de logística** (solo organizadores)
+- **Configuración de privacidad** por sección
+
+### 9.10 Gestión Avanzada de Invitados
 - Árbol genealógico con múltiples celebrantes
 - Invitaciones digitales personalizadas
 - Información de mesa de regalos
 - Galería compartida de fotos/videos
 - Programa de platillos y menús
 
-### 9.7 Sistema de Productos y Proveedores Anidados
+### 9.11 Sistema de Productos y Proveedores Anidados
 - Proveedores pueden tener sub-proveedores
 - Productos con costos base + markup
 - Cálculo automático de costos logísticos
 - Gestión de inventario por producto
 
-### 9.8 Cálculos Logísticos Inteligentes
+### 9.12 Historial de Pagos y Calificaciones
+- **Registro detallado de pagos** por contrato
+- **Múltiples métodos de pago** integrados
+- **Calificación por servicio** después de completar
+- **Historial de calificaciones** por proveedor
+- **Sistema de reputación** basado en desempeño
+
+### 9.13 Fichas Técnicas de Proveedores
+- **Perfil profesional completo** con experiencia
+- **Portafolio de trabajos anteriores** con galerías
+- **Certificaciones y reconocimientos**
+- **Áreas de cobertura geográfica**
+- **Especialidades y servicios destacados**
+
+### 9.14 Sistema de Evidencia Fotográfica
+- **Documentación por etapas** del evento
+- **Subida de evidencias** por cliente y proveedor
+- **Seguimiento del cumplimiento** de contratos
+- **Galería de progreso** en tiempo real
+- **Validación de entregas** con timestaps
+
+### 9.15 Reportes Personalizados
+- **Generación por rol** (cliente, proveedor, organizador)
+- **Exportación múltiple**: PDF, Excel, CSV
+- **Envío automático** por email
+- **Reportes financieros** detallados
+- **Análisis de rentabilidad** por servicio
+
+### 9.16 Cálculos Logísticos Inteligentes
 - Distancias automáticas entre proveedor y evento
 - Costos de transporte por km
 - Tiempo de traslado y costos de combustible
@@ -702,7 +847,7 @@ sequenceDiagram
 6. ⏳ Implementar autenticación y gestión de usuarios
 
 ---
-### 9.9 Diagrama de Arquitectura Offline-First
+### 9.17 Diagrama de Arquitectura Offline-First
 
 ```mermaid
 flowchart TD
