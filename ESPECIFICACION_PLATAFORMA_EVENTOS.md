@@ -410,6 +410,163 @@ erDiagram
         string ruta_archivo
     }
     
+    AYUDA_ECONOMICA {
+        uuid id PK
+        uuid evento_id FK
+        uuid donante_id FK
+        uuid beneficiario_id FK
+        string nombre_donante
+        string email_donante
+        decimal monto_ayuda
+        string concepto_ayuda
+        json servicios_asignados
+        enum tipo_donante
+        enum estatus_pago
+        timestamp fecha_donacion
+        boolean es_anonimo
+    }
+    
+    ACCESO_PUBLICO {
+        uuid id PK
+        uuid evento_id FK
+        string token_acceso
+        json configuracion_privacidad
+        json secciones_visibles
+        enum nivel_acceso
+        int visitas_contador
+        timestamp fecha_creacion
+        timestamp fecha_expiracion
+    }
+    
+    AUTOCOTIZACION {
+        uuid id PK
+        uuid servicio_id FK
+        uuid cliente_id FK
+        json configuracion_paquete
+        json parametros_personalizados
+        decimal precio_calculado
+        json desglose_automatico
+        datetime fecha_evento
+        int numero_invitados
+        enum estatus_cotizacion
+        timestamp fecha_generacion
+    }
+    
+    DISPONIBILIDAD_TIEMPO_REAL {
+        uuid id PK
+        uuid proveedor_id FK
+        datetime fecha_hora_inicio
+        datetime fecha_hora_fin
+        enum estatus_disponibilidad
+        uuid evento_reservado_id FK
+        json ubicacion_compromiso
+        decimal distancia_evento_anterior
+        int tiempo_traslado_minutos
+        decimal costo_traslado
+    }
+    
+    MATRIZ_SERVICIOS_EVENTO {
+        uuid id PK
+        enum tipo_evento
+        uuid categoria_servicio_id FK
+        string nombre_servicio
+        enum prioridad_servicio
+        boolean es_obligatorio
+        boolean es_opcional
+        json alternativas_sugeridas
+        int orden_recomendado
+    }
+    
+    ESTADO_PREPARATIVO {
+        uuid id PK
+        uuid evento_id FK
+        uuid matriz_servicio_id FK
+        enum estatus_servicio
+        string notas_estado
+        uuid responsable_id FK
+        timestamp fecha_confirmacion
+        json detalles_cumplimiento
+        boolean requiere_seguimiento
+    }
+    
+    CALIFICACION_BIDIRECCIONAL {
+        uuid id PK
+        uuid contrato_id FK
+        uuid calificador_id FK
+        uuid calificado_id FK
+        enum tipo_calificador
+        int puntuacion
+        text comentario
+        json criterios_evaluacion
+        timestamp fecha_calificacion
+        boolean es_publica
+    }
+    
+    CONVERSACION {
+        uuid id PK
+        uuid evento_id FK
+        uuid iniciador_id FK
+        uuid destinatario_id FK
+        string asunto
+        enum tipo_conversacion
+        enum estatus_conversacion
+        timestamp fecha_inicio
+        timestamp ultima_actividad
+    }
+    
+    MENSAJE {
+        uuid id PK
+        uuid conversacion_id FK
+        uuid remitente_id FK
+        text contenido_mensaje
+        json archivos_adjuntos
+        enum tipo_mensaje
+        timestamp fecha_envio
+        timestamp fecha_lectura
+        boolean es_sistema
+    }
+    
+    NOTIFICACION_PERSONALIZADA {
+        uuid id PK
+        uuid evento_id FK
+        uuid remitente_id FK
+        json destinatarios_lista
+        string titulo_notificacion
+        text mensaje_contenido
+        json configuracion_envio
+        enum tipo_notificacion
+        enum canal_envio
+        timestamp fecha_programada
+        timestamp fecha_enviada
+        json estadisticas_entrega
+    }
+    
+    PAGINA_PUBLICA_PROVEEDOR {
+        uuid id PK
+        uuid proveedor_id FK
+        string url_personalizada
+        json configuracion_diseno
+        json servicios_destacados
+        json galeria_trabajos
+        json informacion_contacto
+        json testimonios_clientes
+        boolean esta_activa
+        int visitas_totales
+        timestamp fecha_actualizacion
+    }
+    
+    SESION_CHATBOT {
+        uuid id PK
+        uuid usuario_id FK
+        string sesion_token
+        json historial_conversacion
+        json contexto_actual
+        enum idioma_preferido
+        timestamp fecha_inicio
+        timestamp ultima_interaccion
+        boolean sesion_activa
+    }
+    
     SOLICITUD_COTIZACION {
         uuid id PK
         uuid evento_id FK
@@ -535,6 +692,31 @@ erDiagram
     PROVEEDOR ||--o{ FICHA_TECNICA_PROVEEDOR : "tiene ficha"
     EVENTO ||--o{ REPORTE_PERSONALIZADO : "genera reportes"
     USUARIO ||--o{ REPORTE_PERSONALIZADO : "crea reportes"
+    
+    EVENTO ||--o{ AYUDA_ECONOMICA : "recibe ayuda"
+    USUARIO ||--o{ AYUDA_ECONOMICA : "dona para"
+    
+    EVENTO ||--o{ ACCESO_PUBLICO : "permite acceso"
+    
+    SERVICIO ||--o{ AUTOCOTIZACION : "permite autocotizar"
+    CLIENTE ||--o{ AUTOCOTIZACION : "genera cotización"
+    
+    PROVEEDOR ||--o{ DISPONIBILIDAD_TIEMPO_REAL : "tiene disponibilidad"
+    
+    CATEGORIA_SERVICIO ||--o{ MATRIZ_SERVICIOS_EVENTO : "incluye en matriz"
+    EVENTO ||--o{ ESTADO_PREPARATIVO : "tiene preparativos"
+    MATRIZ_SERVICIOS_EVENTO ||--o{ ESTADO_PREPARATIVO : "se cumple en"
+    
+    CONTRATO ||--o{ CALIFICACION_BIDIRECCIONAL : "genera calificaciones"
+    
+    EVENTO ||--o{ CONVERSACION : "tiene conversaciones"
+    CONVERSACION ||--o{ MENSAJE : "contiene mensajes"
+    
+    EVENTO ||--o{ NOTIFICACION_PERSONALIZADA : "envía notificaciones"
+    
+    PROVEEDOR ||--o{ PAGINA_PUBLICA_PROVEEDOR : "tiene página"
+    
+    USUARIO ||--o{ SESION_CHATBOT : "usa chatbot"
 ```
 
 ## 4. MODELO ECONÓMICO Y SISTEMA DE COSTOS
@@ -831,7 +1013,100 @@ sequenceDiagram
 - **Reportes financieros** detallados
 - **Análisis de rentabilidad** por servicio
 
-### 9.16 Cálculos Logísticos Inteligentes
+### 9.16 Sistema de Ayuda Económica
+- **Donaciones de usuarios registrados** para eventos
+- **Donaciones anónimas** de usuarios no registrados
+- **Asignación específica** a servicios o monto total
+- **Facturación directa** al donante por servicio
+- **Seguimiento financiero** integrado en reportes
+- **Notificaciones automáticas** a beneficiarios
+
+### 9.17 Acceso Público Configurable
+- **Usuarios no registrados** pueden ver información del evento
+- **Configuración de privacidad** por colaborador:
+  - Solo organizador puede ver
+  - Solo invitados registrados
+  - Solo usuarios registrados
+  - Público general
+- **Confirmación de asistencia** sin registro
+- **Integración con mesas de regalos** (Liverpool, Amazon)
+- **Enlaces compartibles** por redes sociales
+
+### 9.18 Auto-cotización Inteligente
+- **Paquetes predefinidos** por proveedor
+- **Cálculo automático** con parámetros personalizados:
+  - Número de invitados
+  - Fecha y horario del evento
+  - Ubicación y distancia
+  - Disponibilidad de inventario
+- **Tarifas dinámicas** por día de la semana
+- **Descuentos automáticos** por volumen
+
+### 9.19 Disponibilidad en Tiempo Real
+- **Cálculo de disponibilidad** para proveedores con múltiples eventos
+- **Optimización de rutas** entre eventos del mismo día:
+  - Evento 1: Boda 4-8 PM
+  - Traslado: 30 min + setup
+  - Evento 2: Cumpleaños 9 PM-1 AM
+- **Costos de traslado** incluidos automáticamente
+- **Alertas de conflictos** de horario
+
+### 9.20 Matriz de Servicios por Evento
+- **Plantillas por tipo de evento**:
+  - Boda: Fotografía, Música, Banquete, Decoración, etc.
+  - XV Años: Vals, Chambelanes, DJ, etc.
+  - Cumpleaños: Animación, Pastel, etc.
+- **Estado de preparativos**:
+  - ✅ Confirmado
+  - ⏳ Pendiente
+  - ❌ Descartado (ej: tío lleva en su carro)
+  - 📝 Requiere seguimiento
+- **Información detallada** por servicio
+- **Modificación dinámica** de la matriz
+
+### 9.21 Calificación Bidireccional
+- **Cliente califica a proveedor** (tradicional)
+- **Proveedor califica a cliente**:
+  - Puntualidad en pagos
+  - Claridad en requerimientos
+  - Cooperación durante el evento
+  - Respeto a acuerdos
+- **Sistema de reputación** para ambos lados
+
+### 9.22 Chatbot Inteligente
+- **Guía paso a paso** para nuevos usuarios
+- **Respuestas frecuentes** contextuales
+- **Navegación asistida** por la aplicación
+- **Soporte multiidioma** (español/inglés)
+- **Escalación a soporte humano** cuando sea necesario
+
+### 9.23 Sistema de Mensajería Integrado
+- **Chat directo** cliente-proveedor
+- **Conversaciones por evento** organizadas
+- **Archivos adjuntos** (imágenes, documentos)
+- **Notificaciones en tiempo real**
+- **Historial de conversaciones** por contrato
+
+### 9.24 Notificaciones Personalizables
+- **Envío masivo** a invitados seleccionados
+- **Programación de envío**:
+  - 1 semana antes del evento
+  - 1 día antes del evento
+  - Durante el evento (cambios de horario)
+  - Después del evento (agradecimientos)
+- **Múltiples canales**: Email, SMS, Push, WhatsApp
+- **Plantillas personalizables** por tipo de mensaje
+
+### 9.25 Páginas Públicas de Proveedores
+- **URL personalizada** (ej: /proveedor/flores-maria)
+- **Portafolio visual** con galerías
+- **Servicios destacados** con precios base
+- **Testimonios** de clientes anteriores
+- **Formulario de contacto** directo
+- **Integración con redes sociales**
+- **SEO optimizado** para búsquedas
+
+### 9.26 Cálculos Logísticos Inteligentes
 - Distancias automáticas entre proveedor y evento
 - Costos de transporte por km
 - Tiempo de traslado y costos de combustible
@@ -847,7 +1122,63 @@ sequenceDiagram
 6. ⏳ Implementar autenticación y gestión de usuarios
 
 ---
-### 9.17 Diagrama de Arquitectura Offline-First
+### 9.27 Diagrama de Ecosistema Completo
+
+```mermaid
+flowchart TD
+    subgraph "Usuarios del Sistema"
+        UR[Usuario Registrado]
+        UN[Usuario No Registrado]
+        CL[Cliente]
+        PR[Proveedor]
+        CO[Colaborador]
+    end
+    
+    subgraph "Funcionalidades Principales"
+        EV[Gestión de Eventos]
+        SE[Servicios Personalizados]
+        CT[Auto-cotización]
+        DS[Diseñador de Salones]
+        IT[Itinerarios Inteligentes]
+    end
+    
+    subgraph "Sistemas de Apoyo"
+        AE[Ayuda Económica]
+        AP[Acceso Público]
+        MS[Matriz de Servicios]
+        CB[Chatbot]
+        NT[Notificaciones]
+    end
+    
+    subgraph "Integraciones Externas"
+        MP[Google Maps]
+        PG[Pasarelas de Pago]
+        MR[Mesas de Regalos]
+        RS[Redes Sociales]
+        WA[WhatsApp Business]
+    end
+    
+    UR --> EV
+    UN --> AP
+    CL --> SE
+    PR --> CT
+    CO --> DS
+    
+    EV --> AE
+    SE --> MS
+    CT --> IT
+    
+    CB --> UR
+    CB --> UN
+    NT --> MR
+    
+    AP --> RS
+    AE --> PG
+    IT --> MP
+    NT --> WA
+```
+
+### 9.28 Diagrama de Arquitectura Offline-First
 
 ```mermaid
 flowchart TD
@@ -886,7 +1217,7 @@ flowchart TD
     QUEUE -->|Procesa cambios| DB
 ```
 
-### 9.10 Diagrama de Flujo de Evento Multi-etapa
+### 9.29 Diagrama de Flujo de Evento Multi-etapa
 
 ```mermaid
 flowchart TD
