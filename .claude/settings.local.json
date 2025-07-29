@@ -20,7 +20,8 @@
       "Bash(npm run setup:railway:*)",
       "Bash(npm run setup:*)",
       "Bash(railway service:*)",
-      "Bash(railway variables:*)"
+      "Bash(railway variables:*)",
+      "Bash(npm run frontend:*)"
     ],
     "deny": []
   }

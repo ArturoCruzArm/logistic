@@ -292,10 +292,244 @@ app.get('/api/auth/profile', verifyToken, async (req, res) => {
   }
 });
 
+// ============================================
+// RUTAS DE EVENTOS (INTEGRADAS)
+// ============================================
+
+// GET /api/eventos - Listar eventos del usuario
+app.get('/api/eventos', verifyToken, async (req, res) => {
+  try {
+    const { data: eventos, error } = await supabaseAdmin
+      .from('eventos')
+      .select(`
+        *,
+        usuario:usuarios(nombre, email)
+      `)
+      .eq('usuario_id', req.user.userId)
+      .order('fecha_evento', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching eventos:', error);
+      return res.status(500).json({ error: 'Error al obtener eventos' });
+    }
+    
+    res.json({
+      eventos: eventos || [],
+      total: eventos?.length || 0
+    });
+    
+  } catch (error) {
+    console.error('Error en listado de eventos:', error);
+    res.status(500).json({ error: 'Error al obtener eventos' });
+  }
+});
+
+// POST /api/eventos - Crear nuevo evento
+app.post('/api/eventos', verifyToken, async (req, res) => {
+  try {
+    const { 
+      nombre_evento, 
+      descripcion, 
+      fecha_evento, 
+      hora_evento,
+      ubicacion, 
+      numero_invitados, 
+      presupuesto_estimado,
+      tipo_evento,
+      servicios_requeridos 
+    } = req.body;
+    
+    // Validaciones básicas
+    if (!nombre_evento || !fecha_evento || !ubicacion || !numero_invitados) {
+      return res.status(400).json({ 
+        error: 'Campos requeridos: nombre_evento, fecha_evento, ubicacion, numero_invitados' 
+      });
+    }
+    
+    // Verificar que el usuario sea cliente
+    if (req.user.tipo_usuario !== 'cliente') {
+      return res.status(403).json({ 
+        error: 'Solo los clientes pueden crear eventos' 
+      });
+    }
+    
+    const eventoData = {
+      usuario_id: req.user.userId,
+      nombre_evento,
+      descripcion,
+      fecha_evento,
+      hora_evento,
+      ubicacion,
+      numero_invitados: parseInt(numero_invitados),
+      presupuesto_estimado: parseFloat(presupuesto_estimado) || null,
+      tipo_evento,
+      servicios_requeridos: servicios_requeridos || [],
+      estatus: 'planificacion',
+      fecha_creacion: new Date().toISOString()
+    };
+    
+    const { data: nuevoEvento, error: insertError } = await supabaseAdmin
+      .from('eventos')
+      .insert([eventoData])
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('Error creating evento:', insertError);
+      return res.status(500).json({ error: 'Error al crear evento' });
+    }
+    
+    res.status(201).json({
+      message: 'Evento creado exitosamente',
+      evento: nuevoEvento
+    });
+    
+  } catch (error) {
+    console.error('Error en creación de evento:', error);
+    res.status(500).json({ error: 'Error al crear evento' });
+  }
+});
+
+// GET /api/eventos/:id - Obtener evento específico
+app.get('/api/eventos/:id', verifyToken, async (req, res) => {
+  try {
+    const eventoId = req.params.id;
+    
+    const { data: evento, error } = await supabaseAdmin
+      .from('eventos')
+      .select(`
+        *,
+        usuario:usuarios(nombre, email, telefono)
+      `)
+      .eq('id', eventoId)
+      .eq('usuario_id', req.user.userId)
+      .single();
+    
+    if (error || !evento) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    
+    res.json({ evento });
+    
+  } catch (error) {
+    console.error('Error al obtener evento:', error);
+    res.status(500).json({ error: 'Error al obtener evento' });
+  }
+});
+
+// PUT /api/eventos/:id - Actualizar evento
+app.put('/api/eventos/:id', verifyToken, async (req, res) => {
+  try {
+    const eventoId = req.params.id;
+    const { 
+      nombre_evento, 
+      descripcion, 
+      fecha_evento, 
+      hora_evento,
+      ubicacion, 
+      numero_invitados, 
+      presupuesto_estimado,
+      tipo_evento,
+      servicios_requeridos,
+      estatus
+    } = req.body;
+    
+    // Verificar que el evento pertenece al usuario
+    const { data: eventoExistente, error: checkError } = await supabaseAdmin
+      .from('eventos')
+      .select('id, usuario_id')
+      .eq('id', eventoId)
+      .eq('usuario_id', req.user.userId)
+      .single();
+    
+    if (checkError || !eventoExistente) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    
+    const updateData = {
+      nombre_evento,
+      descripcion,
+      fecha_evento,
+      hora_evento,
+      ubicacion,
+      numero_invitados: numero_invitados ? parseInt(numero_invitados) : undefined,
+      presupuesto_estimado: presupuesto_estimado ? parseFloat(presupuesto_estimado) : undefined,
+      tipo_evento,
+      servicios_requeridos,
+      estatus,
+      fecha_actualizacion: new Date().toISOString()
+    };
+    
+    // Remover campos undefined
+    Object.keys(updateData).forEach(key => 
+      updateData[key] === undefined && delete updateData[key]
+    );
+    
+    const { data: eventoActualizado, error: updateError } = await supabaseAdmin
+      .from('eventos')
+      .update(updateData)
+      .eq('id', eventoId)
+      .select()
+      .single();
+    
+    if (updateError) {
+      console.error('Error updating evento:', updateError);
+      return res.status(500).json({ error: 'Error al actualizar evento' });
+    }
+    
+    res.json({
+      message: 'Evento actualizado exitosamente',
+      evento: eventoActualizado
+    });
+    
+  } catch (error) {
+    console.error('Error en actualización de evento:', error);
+    res.status(500).json({ error: 'Error al actualizar evento' });
+  }
+});
+
+// DELETE /api/eventos/:id - Eliminar evento
+app.delete('/api/eventos/:id', verifyToken, async (req, res) => {
+  try {
+    const eventoId = req.params.id;
+    
+    // Verificar que el evento pertenece al usuario
+    const { data: eventoExistente, error: checkError } = await supabaseAdmin
+      .from('eventos')
+      .select('id, usuario_id, nombre_evento')
+      .eq('id', eventoId)
+      .eq('usuario_id', req.user.userId)
+      .single();
+    
+    if (checkError || !eventoExistente) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    
+    const { error: deleteError } = await supabaseAdmin
+      .from('eventos')
+      .delete()
+      .eq('id', eventoId);
+    
+    if (deleteError) {
+      console.error('Error deleting evento:', deleteError);
+      return res.status(500).json({ error: 'Error al eliminar evento' });
+    }
+    
+    res.json({
+      message: 'Evento eliminado exitosamente',
+      evento_eliminado: eventoExistente.nombre_evento
+    });
+    
+  } catch (error) {
+    console.error('Error en eliminación de evento:', error);
+    res.status(500).json({ error: 'Error al eliminar evento' });
+  }
+});
+
 // Status endpoint actualizado
 app.get('/api/status', (req, res) => {
   res.json({
-    message: 'Sistema de autenticación integrado y funcionando',
+    message: 'Sistema de autenticación y eventos integrado y funcionando',
     endpoints_disponibles: [
       'GET /',
       'GET /health',
@@ -303,15 +537,20 @@ app.get('/api/status', (req, res) => {
       'GET /api/status',
       'POST /api/auth/register',
       'POST /api/auth/login',
-      'GET /api/auth/profile'
-    ],
-    proximos: [
+      'GET /api/auth/profile',
       'GET /api/eventos',
       'POST /api/eventos',
+      'GET /api/eventos/:id',
+      'PUT /api/eventos/:id',
+      'DELETE /api/eventos/:id'
+    ],
+    proximos: [
       'GET /api/servicios',
+      'POST /api/servicios',
+      'GET /api/cotizaciones',
       'POST /api/cotizaciones'
     ],
-    sistema: 'Autenticación completamente funcional'
+    sistema: 'Autenticación y CRUD de eventos completamente funcional'
   });
 });
 
