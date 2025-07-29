@@ -39,13 +39,17 @@ graph TB
         NOTIFICATION[Notificaciones]
         MESSAGING[Mensajería]
         REVIEW[Reseñas y Calificaciones]
+        GUEST[Gestión de Invitados]
+        ITINERARY[Itinerarios y Horarios]
     end
     
     subgraph "Servicios de Apoyo"
         COST[Cálculo de Costos]
         ANALYTICS[Analytics y Reportes]
         FILE[Gestión de Archivos]
-        LOCATION[Geolocalización]
+        LOCATION[Geolocalización y Mapas]
+        LOGISTICS[Cálculo Logístico]
+        GENEALOGY[Árbol Genealógico]
     end
     
     subgraph "Bases de Datos Aisladas"
@@ -55,6 +59,8 @@ graph TB
         DB_PROVIDER[(DB Proveedores)]
         DB_CATALOG[(DB Catálogo)]
         DB_FINANCIAL[(DB Financiero)]
+        DB_GUEST[(DB Invitados)]
+        DB_LOGISTICS[(DB Logística)]
     end
     
     WEB --> GATEWAY
@@ -71,6 +77,8 @@ graph TB
     GATEWAY --> NOTIFICATION
     GATEWAY --> MESSAGING
     GATEWAY --> REVIEW
+    GATEWAY --> GUEST
+    GATEWAY --> ITINERARY
     
     AUTH --> DB_AUTH
     USER --> DB_USER
@@ -79,6 +87,10 @@ graph TB
     CATALOG --> DB_CATALOG
     QUOTE --> DB_FINANCIAL
     PAYMENT --> DB_FINANCIAL
+    GUEST --> DB_GUEST
+    ITINERARY --> DB_LOGISTICS
+    LOCATION --> DB_LOGISTICS
+    LOGISTICS --> DB_LOGISTICS
 ```
 
 ### 2.2 Stack Tecnológico Propuesto
@@ -141,6 +153,7 @@ erDiagram
         int total_reviews
         enum verification_status
         json portfolio
+        json business_location
     }
     
     EVENT {
@@ -148,16 +161,40 @@ erDiagram
         uuid client_id FK
         string name
         text description
-        datetime event_date
-        string location
-        json location_coords
+        datetime start_date
+        datetime end_date
         int estimated_guests
         decimal budget_min
         decimal budget_max
         enum event_type
         enum status
         json requirements
+        json main_celebrants
         timestamp created_at
+    }
+    
+    EVENT_STAGE {
+        uuid id PK
+        uuid event_id FK
+        string name
+        text description
+        enum stage_type
+        int sequence_order
+        boolean is_active
+    }
+    
+    EVENT_LOCATION {
+        uuid id PK
+        uuid event_stage_id FK
+        string name
+        string address
+        decimal latitude
+        decimal longitude
+        json maps_data
+        datetime start_time
+        datetime end_time
+        json facilities
+        json access_instructions
     }
     
     SERVICE_CATEGORY {
@@ -180,13 +217,79 @@ erDiagram
         json portfolio_images
         json specifications
         boolean is_active
+        boolean has_products
+    }
+    
+    PRODUCT {
+        uuid id PK
+        uuid service_id FK
+        uuid supplier_id FK
+        string name
+        text description
+        decimal base_cost
+        decimal markup_percentage
+        json specifications
+        string unit_measure
+        int stock_quantity
+        boolean is_active
+    }
+    
+    SUPPLIER {
+        uuid id PK
+        uuid provider_id FK
+        string name
+        string contact_info
+        json address
+        json terms_conditions
+        decimal rating
+    }
+    
+    ITINERARY {
+        uuid id PK
+        uuid event_location_id FK
+        uuid service_id FK
+        string activity_name
+        text description
+        datetime start_time
+        datetime end_time
+        json participants
+        json requirements
+        enum status
+        int priority_order
+    }
+    
+    GUEST {
+        uuid id PK
+        uuid event_id FK
+        string first_name
+        string last_name
+        string email
+        string phone
+        json address
+        enum invitation_status
+        enum attendance_status
+        json dietary_restrictions
+        json special_needs
+        timestamp invited_at
+        timestamp responded_at
+    }
+    
+    FAMILY_RELATIONSHIP {
+        uuid id PK
+        uuid guest_id FK
+        uuid celebrant_id FK
+        enum relationship_type
+        string relationship_description
+        int generation_level
     }
     
     QUOTE_REQUEST {
         uuid id PK
         uuid event_id FK
         uuid service_id FK
+        uuid event_location_id FK
         json custom_requirements
+        json selected_products
         enum status
         timestamp requested_at
     }
@@ -197,6 +300,7 @@ erDiagram
         uuid provider_id FK
         decimal base_price
         json cost_breakdown
+        json logistics_costs
         json terms_conditions
         datetime valid_until
         enum status
@@ -217,12 +321,27 @@ erDiagram
     COST_ITEM {
         uuid id PK
         uuid quote_id FK
+        uuid product_id FK
         string description
         decimal unit_cost
         int quantity
+        decimal transport_cost
+        decimal storage_cost
+        decimal labor_cost
         decimal total_cost
         string justification
         enum cost_type
+    }
+    
+    LOGISTICS_CALCULATION {
+        uuid id PK
+        uuid quote_id FK
+        decimal distance_km
+        decimal fuel_cost
+        decimal time_cost
+        decimal vehicle_cost
+        json route_data
+        timestamp calculated_at
     }
     
     REVIEW {
@@ -239,13 +358,35 @@ erDiagram
     USER ||--o{ CLIENT : "puede ser"
     USER ||--o{ PROVIDER : "puede ser"
     CLIENT ||--o{ EVENT : "crea"
+    
+    EVENT ||--o{ EVENT_STAGE : "tiene"
+    EVENT_STAGE ||--o{ EVENT_LOCATION : "se realiza en"
+    
+    EVENT ||--o{ GUEST : "invita"
+    GUEST ||--o{ FAMILY_RELATIONSHIP : "tiene parentesco"
+    
+    EVENT_LOCATION ||--o{ ITINERARY : "programa"
+    SERVICE ||--o{ ITINERARY : "participa en"
+    
+    PROVIDER ||--o{ SERVICE : "ofrece"
+    PROVIDER ||--o{ SUPPLIER : "trabaja con"
+    SERVICE ||--o{ PRODUCT : "incluye"
+    SUPPLIER ||--o{ PRODUCT : "suministra"
+    
+    SERVICE_CATEGORY ||--o{ SERVICE : "categoriza"
+    
     EVENT ||--o{ QUOTE_REQUEST : "genera"
     SERVICE ||--o{ QUOTE_REQUEST : "recibe"
-    PROVIDER ||--o{ SERVICE : "ofrece"
-    SERVICE_CATEGORY ||--o{ SERVICE : "categoriza"
+    EVENT_LOCATION ||--o{ QUOTE_REQUEST : "especifica lugar"
+    
     QUOTE_REQUEST ||--o{ QUOTE : "genera"
     QUOTE ||--o{ CONTRACT : "se convierte en"
+    
     QUOTE ||--o{ COST_ITEM : "detalla"
+    PRODUCT ||--o{ COST_ITEM : "incluido en"
+    
+    QUOTE ||--o{ LOGISTICS_CALCULATION : "calcula"
+    
     CONTRACT ||--o{ REVIEW : "puede tener"
 ```
 
@@ -292,22 +433,36 @@ graph TD
 ## 5. INTERFACES DE USUARIO POR TIPO DE CLIENTE
 
 ### 5.1 Cliente Final (Web/Mobile)
-- Dashboard de eventos activos y pasados
-- Creador de eventos paso a paso
-- Explorador de servicios con filtros avanzados
-- Comparador de cotizaciones
-- Chat integrado con proveedores
-- Sistema de pagos y facturación
-- Galería de eventos completados
+- **Dashboard Principal**: Eventos activos, pasados y próximos
+- **Creador de Eventos Multi-etapa**: 
+  - Definición de etapas (ceremonia, recepción, etc.)
+  - Asignación de ubicaciones con mapas integrados
+  - Configuración de horarios por ubicación
+- **Gestión de Invitados**:
+  - Árbol genealógico interactivo
+  - Invitaciones digitales personalizadas
+  - Control de asistencia y dietary restrictions
+- **Itinerario Completo**:
+  - Vista cronológica del evento
+  - Servicios por ubicación y horario
+  - Actividades simultáneas (banda + banquete)
+- **Explorador de Servicios** con filtros geográficos
+- **Comparador de Cotizaciones** con desglose transparente
+- **Sistema de Pagos** y facturación detallada
+- **Galería Compartida** con invitados
 
 ### 5.2 Proveedor de Servicios (Desktop/Web)
-- Panel de gestión de servicios
-- Calculadora de costos inteligente
-- Gestión de cotizaciones y contratos
-- Calendario de disponibilidad
-- Análisis de desempeño y ganancias
-- Gestión de portafolio
-- Sistema de mensajería con clientes
+- **Panel de Gestión de Servicios** y productos
+- **Gestión de Suppliers**: Proveedores y costos
+- **Calculadora de Costos Inteligente**:
+  - Cálculo automático de distancias
+  - Costos de transporte y logística
+  - Markup por almacenamiento y procesamiento
+- **Gestión de Cotizaciones** multi-ubicación
+- **Calendario de Disponibilidad** por servicio
+- **Análisis Financiero** con métricas de rentabilidad
+- **Gestión de Portafolio** con casos de éxito
+- **Sistema de Mensajería** integrado con clientes
 
 ### 5.3 Administrador de Plataforma
 - Monitoreo de transacciones
@@ -379,16 +534,80 @@ sequenceDiagram
 - Cache distribuido
 - Base de datos sharding
 
+## 9. NUEVAS FUNCIONALIDADES AVANZADAS
+
+### 9.1 Sistema de Eventos Multi-etapa
+- Eventos con múltiples ubicaciones (iglesia, salón, casa)
+- Itinerarios detallados por ubicación
+- Integración con Google Maps para rutas
+- Horarios superpuestos y actividades simultáneas
+
+### 9.2 Gestión Avanzada de Invitados
+- Árbol genealógico con múltiples celebrantes
+- Invitaciones digitales personalizadas
+- Información de mesa de regalos
+- Galería compartida de fotos/videos
+- Programa de platillos y menús
+
+### 9.3 Sistema de Productos y Proveedores Anidados
+- Proveedores pueden tener sub-proveedores
+- Productos con costos base + markup
+- Cálculo automático de costos logísticos
+- Gestión de inventario por producto
+
+### 9.4 Cálculos Logísticos Inteligentes
+- Distancias automáticas entre proveedor y evento
+- Costos de transporte por km
+- Tiempo de traslado y costos de combustible
+- Optimización de rutas para múltiples entregas
+
 ## PRÓXIMOS PASOS
 
 1. ✅ Validar arquitectura propuesta
-2. ✅ Definir MVP (Minimum Viable Product)
-3. ✅ Crear wireframes de interfaces
-4. ✅ Definir APIs entre microservicios
-5. ✅ Configurar ambiente de desarrollo
-6. ✅ Implementar primer microservicio (Auth)
+2. ✅ Definir modelo de datos extendido
+3. 🔄 Crear MVP con funcionalidades core
+4. ⏳ Definir APIs entre microservicios
+5. ⏳ Configurar ambiente de desarrollo
+6. ⏳ Implementar autenticación y gestión de usuarios
+
+---
+### 9.5 Diagrama de Flujo de Evento Multi-etapa
+
+```mermaid
+flowchart TD
+    A[Cliente Crea Evento] --> B[Define Etapas del Evento]
+    B --> C[Etapa 1: Ceremonia Religiosa]
+    B --> D[Etapa 2: Sesión de Fotos]
+    B --> E[Etapa 3: Recepción]
+    
+    C --> C1[Ubicación: Iglesia]
+    C --> C2[Horario: 4:00-5:00 PM]
+    C --> C3[Servicios: Decoración, Música]
+    
+    D --> D1[Ubicación: Jardín/Estudio]
+    D --> D2[Horario: 5:30-7:00 PM]
+    D --> D3[Servicios: Fotografía, Video]
+    
+    E --> E1[Ubicación: Salón de Eventos]
+    E --> E2[Horario: 8:00 PM-2:00 AM]
+    E --> E3[Servicios Simultáneos]
+    
+    E3 --> E3A[Música: 8:00-11:00 Banda]
+    E3 --> E3B[Música: 11:00-2:00 DJ]
+    E3 --> E3C[Banquete: 9:00-12:00]
+    E3 --> E3D[Vals: 10:30-11:00]
+    
+    C1 --> F[Cálculo de Distancias]
+    D1 --> F
+    E1 --> F
+    
+    F --> G[Optimización Logística]
+    G --> H[Cotizaciones por Etapa]
+    H --> I[Itinerario Completo]
+```
 
 ---
 **Fecha de creación**: 29 de Julio, 2025
-**Estado**: Documento base para desarrollo
-**Próxima revisión**: Validación con stakeholders
+**Estado**: Especificación extendida con funcionalidades avanzadas
+**Última actualización**: Multi-etapas, invitados y logística inteligente
+**Próxima revisión**: Definición de MVP y APIs
