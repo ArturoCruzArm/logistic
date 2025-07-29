@@ -104,14 +104,17 @@ graph TB
 
 **Frontend:**
 - Web: React.js / Vue.js con TypeScript
-- Mobile: React Native / Flutter
+- Mobile: React Native / Flutter con SQLite local
 - Desktop: Electron / Tauri
+- Offline-First: Redux Persist / Zustand con sincronización
 
 **Infraestructura:**
 - Contenedores: Docker + Kubernetes
 - API Gateway: Kong / Nginx
 - Monitoreo: Prometheus + Grafana
 - Logs: ELK Stack
+- Sincronización: WebSockets + Queue de eventos
+- Cache Local: SQLite + IndexedDB
 
 ## 3. ENTIDADES PRINCIPALES Y RELACIONES
 
@@ -270,8 +273,60 @@ erDiagram
         enum attendance_status
         json dietary_restrictions
         json special_needs
+        json social_profile
+        enum honor_mention_type
+        uuid assigned_table_id FK
+        int social_proximity_score
         timestamp invited_at
         timestamp responded_at
+    }
+    
+    EVENT_COLLABORATOR {
+        uuid id PK
+        uuid event_id FK
+        uuid user_id FK
+        enum role_type
+        json permissions
+        enum collaboration_status
+        timestamp invited_at
+        timestamp accepted_at
+        boolean is_owner
+    }
+    
+    TABLE_ASSIGNMENT {
+        uuid id PK
+        uuid event_location_id FK
+        string table_name
+        int capacity
+        json table_position
+        json assigned_guests
+        decimal social_cohesion_score
+    }
+    
+    QUOTE_TEMPLATE {
+        uuid id PK
+        uuid provider_id FK
+        string template_name
+        enum event_type
+        int min_guests
+        int max_guests
+        json pre_configured_items
+        json pricing_structure
+        boolean is_active
+        timestamp created_at
+    }
+    
+    SYNC_QUEUE {
+        uuid id PK
+        uuid user_id FK
+        string entity_type
+        uuid entity_id
+        enum action_type
+        json data_payload
+        enum sync_status
+        timestamp created_at
+        timestamp synced_at
+        int retry_count
     }
     
     FAMILY_RELATIONSHIP {
@@ -388,6 +443,17 @@ erDiagram
     QUOTE ||--o{ LOGISTICS_CALCULATION : "calcula"
     
     CONTRACT ||--o{ REVIEW : "puede tener"
+    
+    EVENT ||--o{ EVENT_COLLABORATOR : "tiene colaboradores"
+    USER ||--o{ EVENT_COLLABORATOR : "colabora en"
+    
+    EVENT_LOCATION ||--o{ TABLE_ASSIGNMENT : "organiza mesas"
+    GUEST ||--o{ TABLE_ASSIGNMENT : "asignado a"
+    
+    PROVIDER ||--o{ QUOTE_TEMPLATE : "crea plantillas"
+    QUOTE_TEMPLATE ||--o{ QUOTE : "genera desde"
+    
+    USER ||--o{ SYNC_QUEUE : "genera cambios offline"
 ```
 
 ## 4. MODELO ECONÓMICO Y SISTEMA DE COSTOS
@@ -432,44 +498,70 @@ graph TD
 
 ## 5. INTERFACES DE USUARIO POR TIPO DE CLIENTE
 
-### 5.1 Cliente Final (Web/Mobile)
+### 5.1 App Móvil Cliente (iOS/Android - Offline First)
+- **Modo Offline Completo**: Todas las funciones disponibles sin internet
 - **Dashboard Principal**: Eventos activos, pasados y próximos
 - **Creador de Eventos Multi-etapa**: 
   - Definición de etapas (ceremonia, recepción, etc.)
   - Asignación de ubicaciones con mapas integrados
   - Configuración de horarios por ubicación
-- **Gestión de Invitados**:
+- **Gestión Avanzada de Invitados**:
   - Árbol genealógico interactivo
   - Invitaciones digitales personalizadas
-  - Control de asistencia y dietary restrictions
+  - Asignación inteligente de mesas por proximidad social
+  - Menciones de honor (padrinos, familia cercana)
+  - Control de asistencia y restricciones dietéticas
+- **Sistema de Colaboradores**:
+  - Invitar organizadores, familiares, proveedores
+  - Roles personalizables con permisos específicos
+  - Colaboración en tiempo real
 - **Itinerario Completo**:
   - Vista cronológica del evento
   - Servicios por ubicación y horario
   - Actividades simultáneas (banda + banquete)
 - **Explorador de Servicios** con filtros geográficos
-- **Comparador de Cotizaciones** con desglose transparente
+- **Comparador de Cotizaciones** con plantillas pre-estructuradas
 - **Sistema de Pagos** y facturación detallada
-- **Galería Compartida** con invitados
+- **Sincronización Automática** cuando recupera conexión
 
-### 5.2 Proveedor de Servicios (Desktop/Web)
+### 5.2 App Móvil Proveedor (iOS/Android - Offline First)
+- **Modo Offline Completo**: Cotizaciones y gestión sin internet
 - **Panel de Gestión de Servicios** y productos
+- **Rol Dual**: Proveedor de servicios + Organizador de eventos
+- **Plantillas de Cotización Pre-estructuradas**:
+  - Por tipo de evento (boda, XV años, cumpleaños)
+  - Por cantidad de invitados (50, 100, 200+)
+  - Paquetes completos con logística incluida
 - **Gestión de Suppliers**: Proveedores y costos
 - **Calculadora de Costos Inteligente**:
   - Cálculo automático de distancias
   - Costos de transporte y logística
   - Markup por almacenamiento y procesamiento
+- **Modo Organizador de Eventos**:
+  - Crear eventos para clientes
+  - Gestionar todos los aspectos técnicos
+  - Invitar al cliente como colaborador/auditor
 - **Gestión de Cotizaciones** multi-ubicación
 - **Calendario de Disponibilidad** por servicio
 - **Análisis Financiero** con métricas de rentabilidad
-- **Gestión de Portafolio** con casos de éxito
-- **Sistema de Mensajería** integrado con clientes
+- **Sincronización Inteligente** con cola de prioridades
 
-### 5.3 Administrador de Plataforma
-- Monitoreo de transacciones
-- Gestión de usuarios y proveedores
-- Análisis de métricas del negocio
-- Moderación de contenido
-- Configuración de comisiones
+### 5.3 Plataforma Web Escritorio (Todos los Roles)
+- **Sistema de Roles Flexibles**:
+  - Cliente → puede ser Organizador
+  - Proveedor → puede ser Organizador de eventos
+  - Organizador → puede gestionar múltiples eventos
+  - Colaborador → permisos específicos por evento
+- **Administración de Plataforma**:
+  - Monitoreo de transacciones
+  - Gestión de usuarios y proveedores
+  - Análisis de métricas del negocio
+  - Moderación de contenido
+  - Configuración de comisiones
+- **Algoritmos Inteligentes**:
+  - Asignación óptima de mesas
+  - Recomendaciones de servicios
+  - Optimización de rutas logísticas
 
 ## 6. SISTEMA DE AUTENTICACIÓN Y PERMISOS
 
@@ -534,7 +626,7 @@ sequenceDiagram
 - Cache distribuido
 - Base de datos sharding
 
-## 9. NUEVAS FUNCIONALIDADES AVANZADAS
+## 9. FUNCIONALIDADES AVANZADAS
 
 ### 9.1 Sistema de Eventos Multi-etapa
 - Eventos con múltiples ubicaciones (iglesia, salón, casa)
@@ -542,20 +634,59 @@ sequenceDiagram
 - Integración con Google Maps para rutas
 - Horarios superpuestos y actividades simultáneas
 
-### 9.2 Gestión Avanzada de Invitados
+### 9.2 Aplicaciones Móviles Offline-First
+- **Funcionalidad completa sin internet**
+- **Base de datos local**: SQLite en móvil
+- **Sincronización inteligente**: 
+  - Cola de cambios pendientes
+  - Resolución automática de conflictos
+  - Prioridad por tipo de datos
+- **Cache local**: Imágenes, mapas, cotizaciones
+- **Notificaciones push** cuando se recupera conexión
+
+### 9.3 Sistema de Colaboradores Multi-Rol
+- **Roles flexibles**:
+  - Cliente → Organizador de eventos
+  - Proveedor → Organizador profesional
+  - Colaborador → Familiar/Amigo con permisos
+  - Auditor → Solo lectura y comentarios
+- **Permisos granulares** por sección del evento
+- **Colaboración en tiempo real** con conflictos resueltos
+- **Historial de cambios** por colaborador
+
+### 9.4 Asignación Inteligente de Mesas
+- **Algoritmo de proximidad social**:
+  - Relación genealógica (familia cercana junta)
+  - Afinidad sentimental (parejas, amigos íntimos)
+  - Edad y intereses comunes
+  - Restricciones dietéticas compatibles
+- **Menciones de honor**: Padrinos, familia especial
+- **Optimización automática** con machine learning
+- **Vista previa 3D** del salón con disposición
+
+### 9.5 Cotizaciones Pre-estructuradas
+- **Plantillas por tipo de evento**:
+  - Boda (50-500 invitados)
+  - XV Años (30-300 invitados)
+  - Cumpleaños corporativo (20-200 invitados)
+- **Paquetes all-inclusive** con logística completa
+- **Escalamiento automático** según cantidad de invitados
+- **Personalización rápida** desde plantilla base
+
+### 9.6 Gestión Avanzada de Invitados
 - Árbol genealógico con múltiples celebrantes
 - Invitaciones digitales personalizadas
 - Información de mesa de regalos
 - Galería compartida de fotos/videos
 - Programa de platillos y menús
 
-### 9.3 Sistema de Productos y Proveedores Anidados
+### 9.7 Sistema de Productos y Proveedores Anidados
 - Proveedores pueden tener sub-proveedores
 - Productos con costos base + markup
 - Cálculo automático de costos logísticos
 - Gestión de inventario por producto
 
-### 9.4 Cálculos Logísticos Inteligentes
+### 9.8 Cálculos Logísticos Inteligentes
 - Distancias automáticas entre proveedor y evento
 - Costos de transporte por km
 - Tiempo de traslado y costos de combustible
@@ -571,7 +702,46 @@ sequenceDiagram
 6. ⏳ Implementar autenticación y gestión de usuarios
 
 ---
-### 9.5 Diagrama de Flujo de Evento Multi-etapa
+### 9.9 Diagrama de Arquitectura Offline-First
+
+```mermaid
+flowchart TD
+    subgraph "App Móvil Cliente"
+        AC[App Cliente]
+        SQLITE_C[SQLite Local]
+        SYNC_C[Módulo Sync]
+    end
+    
+    subgraph "App Móvil Proveedor"
+        AP[App Proveedor]
+        SQLITE_P[SQLite Local]
+        SYNC_P[Módulo Sync]
+    end
+    
+    subgraph "Servidor Central"
+        API[API Gateway]
+        DB[Base Datos Principal]
+        QUEUE[Cola de Sincronización]
+        WS[WebSocket Server]
+    end
+    
+    AC --> SQLITE_C
+    AP --> SQLITE_P
+    
+    SYNC_C -->|Cuando hay internet| API
+    SYNC_P -->|Cuando hay internet| API
+    
+    API --> DB
+    API --> QUEUE
+    API --> WS
+    
+    WS -->|Push notifications| SYNC_C
+    WS -->|Push notifications| SYNC_P
+    
+    QUEUE -->|Procesa cambios| DB
+```
+
+### 9.10 Diagrama de Flujo de Evento Multi-etapa
 
 ```mermaid
 flowchart TD
@@ -609,5 +779,5 @@ flowchart TD
 ---
 **Fecha de creación**: 29 de Julio, 2025
 **Estado**: Especificación extendida con funcionalidades avanzadas
-**Última actualización**: Multi-etapas, invitados y logística inteligente
+**Última actualización**: Apps offline-first, colaboradores multi-rol, asignación inteligente
 **Próxima revisión**: Definición de MVP y APIs
