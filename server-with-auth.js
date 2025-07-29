@@ -526,10 +526,360 @@ app.delete('/api/eventos/:id', verifyToken, async (req, res) => {
   }
 });
 
+// ============================================
+// RUTAS DE SERVICIOS (INTEGRADAS)
+// ============================================
+
+// GET /api/servicios - Listar todos los servicios disponibles
+app.get('/api/servicios', async (req, res) => {
+  try {
+    const { categoria, ubicacion, precio_min, precio_max, proveedor_id } = req.query;
+    
+    let query = supabaseAdmin
+      .from('servicios')
+      .select(`
+        *,
+        proveedor:usuarios!servicios_proveedor_id_fkey(
+          id, nombre, email, telefono, nombre_empresa, 
+          experiencia_anos, descripcion_servicios
+        )
+      `);
+    
+    // Aplicar filtros si se proporcionan
+    if (categoria) {
+      query = query.eq('categoria', categoria);
+    }
+    
+    if (ubicacion) {
+      query = query.ilike('ubicaciones_disponibles', `%${ubicacion}%`);
+    }
+    
+    if (precio_min) {
+      query = query.gte('precio_base', parseFloat(precio_min));
+    }
+    
+    if (precio_max) {
+      query = query.lte('precio_base', parseFloat(precio_max));
+    }
+    
+    if (proveedor_id) {
+      query = query.eq('proveedor_id', proveedor_id);
+    }
+    
+    // Solo servicios activos
+    query = query.eq('estatus', 'activo');
+    
+    const { data: servicios, error } = await query.order('fecha_creacion', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching servicios:', error);
+      return res.status(500).json({ error: 'Error al obtener servicios' });
+    }
+    
+    res.json({
+      servicios: servicios || [],
+      total: servicios?.length || 0,
+      filtros_aplicados: { categoria, ubicacion, precio_min, precio_max, proveedor_id }
+    });
+    
+  } catch (error) {
+    console.error('Error en listado de servicios:', error);
+    res.status(500).json({ error: 'Error al obtener servicios' });
+  }
+});
+
+// POST /api/servicios - Crear nuevo servicio (solo proveedores)
+app.post('/api/servicios', verifyToken, async (req, res) => {
+  try {
+    const {
+      nombre_servicio,
+      descripcion,
+      categoria,
+      precio_base,
+      unidad_precio,
+      ubicaciones_disponibles,
+      tiempo_preparacion_dias,
+      incluye,
+      no_incluye,
+      terminos_condiciones,
+      imagenes_urls,
+      disponibilidad_especial
+    } = req.body;
+    
+    // Validaciones básicas
+    if (!nombre_servicio || !categoria || !precio_base) {
+      return res.status(400).json({ 
+        error: 'Campos requeridos: nombre_servicio, categoria, precio_base' 
+      });
+    }
+    
+    // Verificar que el usuario sea proveedor
+    if (req.user.tipo_usuario !== 'proveedor') {
+      return res.status(403).json({ 
+        error: 'Solo los proveedores pueden crear servicios' 
+      });
+    }
+    
+    const servicioData = {
+      proveedor_id: req.user.userId,
+      nombre_servicio,
+      descripcion,
+      categoria,
+      precio_base: parseFloat(precio_base),
+      unidad_precio: unidad_precio || 'evento',
+      ubicaciones_disponibles: ubicaciones_disponibles || [],
+      tiempo_preparacion_dias: parseInt(tiempo_preparacion_dias) || 7,
+      incluye: incluye || [],
+      no_incluye: no_incluye || [],
+      terminos_condiciones,
+      imagenes_urls: imagenes_urls || [],
+      disponibilidad_especial,
+      estatus: 'activo',
+      fecha_creacion: new Date().toISOString()
+    };
+    
+    const { data: nuevoServicio, error: insertError } = await supabaseAdmin
+      .from('servicios')
+      .insert([servicioData])
+      .select(`
+        *,
+        proveedor:usuarios!servicios_proveedor_id_fkey(nombre, email, nombre_empresa)
+      `)
+      .single();
+    
+    if (insertError) {
+      console.error('Error creating servicio:', insertError);
+      return res.status(500).json({ error: 'Error al crear servicio' });
+    }
+    
+    res.status(201).json({
+      message: 'Servicio creado exitosamente',
+      servicio: nuevoServicio
+    });
+    
+  } catch (error) {
+    console.error('Error en creación de servicio:', error);
+    res.status(500).json({ error: 'Error al crear servicio' });
+  }
+});
+
+// GET /api/servicios/:id - Obtener servicio específico
+app.get('/api/servicios/:id', async (req, res) => {
+  try {
+    const servicioId = req.params.id;
+    
+    const { data: servicio, error } = await supabaseAdmin
+      .from('servicios')
+      .select(`
+        *,
+        proveedor:usuarios!servicios_proveedor_id_fkey(
+          id, nombre, email, telefono, nombre_empresa,
+          experiencia_anos, descripcion_servicios
+        )
+      `)
+      .eq('id', servicioId)
+      .eq('estatus', 'activo')
+      .single();
+    
+    if (error || !servicio) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    res.json({ servicio });
+    
+  } catch (error) {
+    console.error('Error al obtener servicio:', error);
+    res.status(500).json({ error: 'Error al obtener servicio' });
+  }
+});
+
+// PUT /api/servicios/:id - Actualizar servicio (solo el proveedor propietario)
+app.put('/api/servicios/:id', verifyToken, async (req, res) => {
+  try {
+    const servicioId = req.params.id;
+    const {
+      nombre_servicio,
+      descripcion,
+      categoria,
+      precio_base,
+      unidad_precio,
+      ubicaciones_disponibles,
+      tiempo_preparacion_dias,
+      incluye,
+      no_incluye,
+      terminos_condiciones,
+      imagenes_urls,
+      disponibilidad_especial,
+      estatus
+    } = req.body;
+    
+    // Verificar que el servicio pertenece al proveedor
+    const { data: servicioExistente, error: checkError } = await supabaseAdmin
+      .from('servicios')
+      .select('id, proveedor_id')
+      .eq('id', servicioId)
+      .eq('proveedor_id', req.user.userId)
+      .single();
+    
+    if (checkError || !servicioExistente) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    const updateData = {
+      nombre_servicio,
+      descripcion,
+      categoria,
+      precio_base: precio_base ? parseFloat(precio_base) : undefined,
+      unidad_precio,
+      ubicaciones_disponibles,
+      tiempo_preparacion_dias: tiempo_preparacion_dias ? parseInt(tiempo_preparacion_dias) : undefined,
+      incluye,
+      no_incluye,
+      terminos_condiciones,
+      imagenes_urls,
+      disponibilidad_especial,
+      estatus,
+      fecha_actualizacion: new Date().toISOString()
+    };
+    
+    // Remover campos undefined
+    Object.keys(updateData).forEach(key => 
+      updateData[key] === undefined && delete updateData[key]
+    );
+    
+    const { data: servicioActualizado, error: updateError } = await supabaseAdmin
+      .from('servicios')
+      .update(updateData)
+      .eq('id', servicioId)
+      .select(`
+        *,
+        proveedor:usuarios!servicios_proveedor_id_fkey(nombre, email, nombre_empresa)
+      `)
+      .single();
+    
+    if (updateError) {
+      console.error('Error updating servicio:', updateError);
+      return res.status(500).json({ error: 'Error al actualizar servicio' });
+    }
+    
+    res.json({
+      message: 'Servicio actualizado exitosamente',
+      servicio: servicioActualizado
+    });
+    
+  } catch (error) {
+    console.error('Error en actualización de servicio:', error);
+    res.status(500).json({ error: 'Error al actualizar servicio' });
+  }
+});
+
+// DELETE /api/servicios/:id - Eliminar servicio (solo el proveedor propietario)
+app.delete('/api/servicios/:id', verifyToken, async (req, res) => {
+  try {
+    const servicioId = req.params.id;
+    
+    // Verificar que el servicio pertenece al proveedor
+    const { data: servicioExistente, error: checkError } = await supabaseAdmin
+      .from('servicios')
+      .select('id, proveedor_id, nombre_servicio')
+      .eq('id', servicioId)
+      .eq('proveedor_id', req.user.userId)
+      .single();
+    
+    if (checkError || !servicioExistente) {
+      return res.status(404).json({ error: 'Servicio no encontrado' });
+    }
+    
+    // En lugar de eliminar, cambiar estatus a 'inactivo'
+    const { error: updateError } = await supabaseAdmin
+      .from('servicios')
+      .update({ 
+        estatus: 'inactivo',
+        fecha_actualizacion: new Date().toISOString()
+      })
+      .eq('id', servicioId);
+    
+    if (updateError) {
+      console.error('Error deactivating servicio:', updateError);
+      return res.status(500).json({ error: 'Error al eliminar servicio' });
+    }
+    
+    res.json({
+      message: 'Servicio eliminado exitosamente',
+      servicio_eliminado: servicioExistente.nombre_servicio
+    });
+    
+  } catch (error) {
+    console.error('Error en eliminación de servicio:', error);
+    res.status(500).json({ error: 'Error al eliminar servicio' });
+  }
+});
+
+// GET /api/servicios/proveedor/:id - Obtener servicios de un proveedor específico
+app.get('/api/servicios/proveedor/:id', async (req, res) => {
+  try {
+    const proveedorId = req.params.id;
+    
+    const { data: servicios, error } = await supabaseAdmin
+      .from('servicios')
+      .select(`
+        *,
+        proveedor:usuarios!servicios_proveedor_id_fkey(
+          nombre, email, nombre_empresa, experiencia_anos
+        )
+      `)
+      .eq('proveedor_id', proveedorId)
+      .eq('estatus', 'activo')
+      .order('fecha_creacion', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching servicios by proveedor:', error);
+      return res.status(500).json({ error: 'Error al obtener servicios del proveedor' });
+    }
+    
+    res.json({
+      servicios: servicios || [],
+      total: servicios?.length || 0,
+      proveedor_id: proveedorId
+    });
+    
+  } catch (error) {
+    console.error('Error en servicios por proveedor:', error);
+    res.status(500).json({ error: 'Error al obtener servicios del proveedor' });
+  }
+});
+
+// GET /api/servicios/categorias - Obtener lista de categorías disponibles
+app.get('/api/servicios/categorias', async (req, res) => {
+  try {
+    const { data: categorias, error } = await supabaseAdmin
+      .from('servicios')
+      .select('categoria')
+      .eq('estatus', 'activo');
+    
+    if (error) {
+      console.error('Error fetching categorias:', error);
+      return res.status(500).json({ error: 'Error al obtener categorías' });
+    }
+    
+    // Obtener categorías únicas
+    const categoriasUnicas = [...new Set(categorias.map(s => s.categoria))].filter(Boolean);
+    
+    res.json({
+      categorias: categoriasUnicas,
+      total: categoriasUnicas.length
+    });
+    
+  } catch (error) {
+    console.error('Error en categorías:', error);
+    res.status(500).json({ error: 'Error al obtener categorías' });
+  }
+});
+
 // Status endpoint actualizado
 app.get('/api/status', (req, res) => {
   res.json({
-    message: 'Sistema de autenticación y eventos integrado y funcionando',
+    message: 'Sistema completo: autenticación, eventos y servicios funcionando',
     endpoints_disponibles: [
       'GET /',
       'GET /health',
@@ -542,15 +892,21 @@ app.get('/api/status', (req, res) => {
       'POST /api/eventos',
       'GET /api/eventos/:id',
       'PUT /api/eventos/:id',
-      'DELETE /api/eventos/:id'
-    ],
-    proximos: [
+      'DELETE /api/eventos/:id',
       'GET /api/servicios',
       'POST /api/servicios',
-      'GET /api/cotizaciones',
-      'POST /api/cotizaciones'
+      'GET /api/servicios/:id',
+      'PUT /api/servicios/:id',
+      'DELETE /api/servicios/:id',
+      'GET /api/servicios/proveedor/:id',
+      'GET /api/servicios/categorias'
     ],
-    sistema: 'Autenticación y CRUD de eventos completamente funcional'
+    proximos: [
+      'GET /api/cotizaciones',
+      'POST /api/cotizaciones',
+      'GET /api/dashboard/proveedor'
+    ],
+    sistema: 'Autenticación, eventos y catálogo de servicios completamente funcional'
   });
 });
 
