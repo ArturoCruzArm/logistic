@@ -107,26 +107,52 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-// Rutas de la API - se cargarán cuando estén listas
-app.get('/api/status', (req, res) => {
-  res.json({
-    message: 'API en desarrollo',
-    endpoints_disponibles: [
-      'GET /',
-      'GET /health',
-      'GET /api/test-db',
-      'GET /api/status'
-    ],
-    pendientes: [
-      'POST /api/auth/register',
-      'POST /api/auth/login',
-      'GET /api/eventos',
-      'POST /api/eventos',
-      'GET /api/servicios',
-      'POST /api/cotizaciones'
-    ]
+// Rutas de la API
+try {
+  app.use('/api/auth', require('./routes/auth'));
+  app.use('/api/eventos', require('./routes/eventos'));
+  app.use('/api/servicios', require('./routes/servicios'));
+  app.use('/api/cotizaciones', require('./routes/cotizaciones'));
+  app.use('/api/proveedores', require('./routes/proveedores'));
+
+  // Status endpoint actualizado
+  app.get('/api/status', (req, res) => {
+    res.json({
+      message: 'APIs de autenticación activas',
+      endpoints_disponibles: [
+        'GET /',
+        'GET /health',
+        'GET /api/test-db',
+        'GET /api/status',
+        'POST /api/auth/register',
+        'POST /api/auth/login',
+        'GET /api/auth/profile'
+      ],
+      proximos: [
+        'GET /api/eventos',
+        'POST /api/eventos',
+        'GET /api/servicios',
+        'POST /api/cotizaciones'
+      ]
+    });
   });
-});
+} catch (error) {
+  console.error('Error loading routes:', error.message);
+  
+  // Fallback status
+  app.get('/api/status', (req, res) => {
+    res.json({
+      message: 'API en desarrollo - algunas rutas pueden no estar disponibles',
+      error: error.message,
+      endpoints_disponibles: [
+        'GET /',
+        'GET /health',
+        'GET /api/test-db',
+        'GET /api/status'
+      ]
+    });
+  });
+}
 
 // Middleware para rutas no encontradas
 app.use('*', (req, res) => {
