@@ -110,6 +110,7 @@ app.get('/api/test-db', async (req, res) => {
 // Rutas de la API
 try {
   app.use('/api/auth', require('./routes/auth'));
+  app.use('/api/auth', require('./routes/auth-debug')); // Debug route
   app.use('/api/eventos', require('./routes/eventos'));
   app.use('/api/servicios', require('./routes/servicios'));
   app.use('/api/cotizaciones', require('./routes/cotizaciones'));
