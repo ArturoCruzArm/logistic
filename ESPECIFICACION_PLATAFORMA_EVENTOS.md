@@ -621,6 +621,74 @@ erDiagram
         boolean aplicado_automaticamente
     }
     
+    CALCULADORA_CONSUMO_DIY {
+        uuid id PK
+        uuid evento_id FK
+        enum tipo_consumo
+        int total_invitados
+        int invitados_adultos
+        int invitados_ninos
+        int invitados_adolescentes
+        decimal duracion_evento_horas
+        json factores_consumo
+        json recomendaciones_calculadas
+        decimal costo_estimado
+        timestamp fecha_calculo
+    }
+    
+    INVITACION_FAMILIAR {
+        uuid id PK
+        uuid evento_id FK
+        string nombre_familia
+        json miembros_familia
+        string direccion_principal
+        string telefono_principal
+        string email_principal
+        int total_invitados
+        json informacion_especial
+        string codigo_invitacion
+        timestamp fecha_generacion
+    }
+    
+    GENERADOR_PRESUPUESTO {
+        uuid id PK
+        uuid evento_id FK
+        decimal presupuesto_total
+        json distribucion_prioridades
+        json servicios_seleccionados
+        json servicios_alternativos
+        decimal presupuesto_usado
+        decimal presupuesto_restante
+        enum criterio_seleccion
+        timestamp fecha_generacion
+    }
+    
+    REQUERIMIENTOS_ESPACIALES {
+        uuid id PK
+        uuid servicio_id FK
+        decimal ancho_minimo_metros
+        decimal largo_minimo_metros
+        decimal altura_minima_metros
+        decimal area_total_metros2
+        json equipos_adicionales
+        json restricciones_ubicacion
+        boolean requiere_corriente
+        int potencia_electrica_watts
+        json notas_instalacion
+    }
+    
+    COMPATIBILIDAD_SERVICIO {
+        uuid id PK
+        uuid servicio_id FK
+        int capacidad_minima_invitados
+        int capacidad_maxima_invitados
+        int capacidad_optima_invitados
+        json tipos_evento_compatibles
+        json restricciones_edad
+        decimal factor_calidad_por_capacidad
+        enum nivel_especializacion
+    }
+    
     SOLICITUD_COTIZACION {
         uuid id PK
         uuid evento_id FK
@@ -781,6 +849,16 @@ erDiagram
     
     EVENTO ||--o{ PREFERENCIAS_PERSONALIZADAS : "captura preferencias"
     SERVICIO ||--o{ PREFERENCIAS_PERSONALIZADAS : "personaliza con"
+    
+    EVENTO ||--o{ CALCULADORA_CONSUMO_DIY : "calcula consumo"
+    
+    EVENTO ||--o{ INVITACION_FAMILIAR : "agrupa por familia"
+    
+    EVENTO ||--o{ GENERADOR_PRESUPUESTO : "genera con presupuesto"
+    
+    SERVICIO ||--o{ REQUERIMIENTOS_ESPACIALES : "requiere espacio"
+    
+    SERVICIO ||--o{ COMPATIBILIDAD_SERVICIO : "define compatibilidad"
 ```
 
 ## 4. MODELO ECONÓMICO Y SISTEMA DE COSTOS
@@ -1202,7 +1280,87 @@ sequenceDiagram
 - **Fechas límite** para entrega de información
 - **Seguimiento automático** con recordatorios
 
-### 9.29 Cálculos Logísticos Inteligentes
+### 9.29 Calculadora de Consumo DIY (Hágalo Usted Mismo)
+- **Cálculo inteligente por demografía**:
+  - Adultos: 2-3 bebidas/hora, 350g comida principal
+  - Niños: 1 bebida/hora, 200g comida + menú infantil
+  - Adolescentes: 1.5 bebidas/hora, 300g comida
+- **Calculadora por tipo de producto**:
+  - Bebidas alcohólicas (vino, cerveza, licores)
+  - Bebidas no alcohólicas (refrescos, agua, jugos)
+  - Comida principal y entradas
+  - Postres y dulces
+  - Hielo y complementos
+- **Factores de ajuste**:
+  - Duración del evento
+  - Temporada del año (calor = más bebidas)
+  - Tipo de celebración (formal vs casual)
+  - Horario (mañana, tarde, noche)
+- **Recomendaciones automáticas** con cantidades exactas
+- **Cálculo de costos** con sugerencias de compra
+
+### 9.30 Invitaciones Familiares Agrupadas
+- **Agrupación automática** por núcleo familiar:
+  - Familia González: Papa, Mama, 2 hijos
+  - Familia Martínez: Pareja sin hijos
+  - Solteros: Invitaciones individuales
+- **Generación inteligente**:
+  - "La Familia González está invitada..."
+  - Información específica por miembro
+  - Datos de contacto principal
+- **Código de invitación familiar** único
+- **Confirmación grupal** con detalles individuales
+- **Envío a dirección principal** de la familia
+
+### 9.31 Generador de Eventos por Presupuesto
+- **Presupuesto fijo inicial**: "Mi fiesta con $100,000"
+- **Distribución inteligente por prioridades**:
+  1. Lugar (salón): 30-40% del presupuesto
+  2. Banquete: 25-35% del presupuesto  
+  3. Música: 10-15% del presupuesto
+  4. Decoración: 10-15% del presupuesto
+  5. Fotografía: 5-10% del presupuesto
+  6. Otros: 5-10% del presupuesto
+- **Modos de selección**:
+  - Por calidad: Mejores proveedores que ajusten
+  - Por cantidad: Más servicios con presupuesto
+  - Por invitado: Costo fijo por persona
+  - Personalizado: Prioridades manuales
+- **Ajuste dinámico**: Si un servicio cuesta menos, redistribuir presupuesto
+- **Alternativas automáticas** cuando se agota presupuesto
+
+### 9.32 Sistema de Requerimientos Espaciales
+- **Especificaciones por servicio**:
+  - Banda musical: 4m x 2m, altura 3m
+  - DJ: 2m x 1.5m, altura normal
+  - Mesa de regalos: 1.5m x 1m
+  - Barra de bebidas: 3m x 1m + espacio de trabajo
+  - Pista de baile: 20m² para 50 personas
+- **Equipos adicionales**:
+  - Escenario requiere +2m x 3m
+  - Iluminación requiere altura +2m
+  - Sistema de sonido requiere conectores
+- **Generación automática** del mapa 3D del salón
+- **Validación de compatibilidad** espacial
+- **Sugerencias de optimización** de espacio
+
+### 9.33 Filtros de Compatibilidad por Capacidad
+- **Rangos de especialización por proveedor**:
+  - Banda sinfónica: 100-500 invitados (no apta para 10 personas)
+  - Mariachi íntimo: 10-50 invitados (se pierde en eventos grandes)
+  - DJ versátil: 20-300 invitados
+  - Fotógrafo bodas: 50-200 invitados (especialista)
+- **Filtros automáticos**:
+  - Ocultar proveedores no compatibles
+  - Mostrar advertencias de incompatibilidad
+  - Sugerir proveedores óptimos
+- **Factor de calidad por capacidad**:
+  - Zona óptima: 100% calidad
+  - Fuera de zona: Calidad reducida
+  - Zona incompatible: No mostrar
+- **Recomendaciones inteligentes** basadas en capacidad del evento
+
+### 9.34 Cálculos Logísticos Inteligentes
 - Distancias automáticas entre proveedor y evento
 - Costos de transporte por km
 - Tiempo de traslado y costos de combustible
@@ -1300,7 +1458,55 @@ sequenceDiagram
 - **Seguros de eventos** integrados
 - **Financiamiento** para eventos grandes
 
-### 9.30 Diagrama de Ecosistema Completo
+### 9.35 Diagrama de Funcionalidades DIY y Presupuesto
+
+```mermaid
+flowchart TD
+    subgraph "Cliente DIY"
+        CDY[Cliente que hace cosas por sí mismo]
+        CALC[Calculadora de Consumo]
+        PRES[Generador por Presupuesto]
+    end
+    
+    subgraph "Cálculos Inteligentes"
+        DEMO[Análisis Demográfico]
+        EDAD[Adultos/Niños/Adolescentes]
+        FACT[Factores de Ajuste]
+    end
+    
+    subgraph "Distribución de Presupuesto"
+        LUGAR[Lugar: 30-40%]
+        COMIDA[Banquete: 25-35%]
+        MUSICA[Música: 10-15%]
+        DECO[Decoración: 10-15%]
+        FOTO[Fotografía: 5-10%]
+    end
+    
+    subgraph "Compatibilidad Espacial"
+        REQ[Requerimientos Espaciales]
+        COMP[Filtros de Compatibilidad]
+        MAPA[Generación Mapa 3D]
+    end
+    
+    CDY --> CALC
+    CDY --> PRES
+    
+    CALC --> DEMO
+    DEMO --> EDAD
+    EDAD --> FACT
+    
+    PRES --> LUGAR
+    PRES --> COMIDA
+    PRES --> MUSICA
+    PRES --> DECO
+    PRES --> FOTO
+    
+    LUGAR --> REQ
+    REQ --> COMP
+    COMP --> MAPA
+```
+
+### 9.36 Diagrama de Ecosistema Completo
 
 ```mermaid
 flowchart TD
@@ -1356,7 +1562,7 @@ flowchart TD
     NT --> WA
 ```
 
-### 9.31 Diagrama de Arquitectura Offline-First
+### 9.37 Diagrama de Arquitectura Offline-First
 
 ```mermaid
 flowchart TD
@@ -1395,7 +1601,7 @@ flowchart TD
     QUEUE -->|Procesa cambios| DB
 ```
 
-### 9.32 Diagrama de Flujo de Evento Multi-etapa
+### 9.38 Diagrama de Flujo de Evento Multi-etapa
 
 ```mermaid
 flowchart TD
