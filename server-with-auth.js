@@ -24,7 +24,11 @@ const supabaseAdmin = createClient(
 
 // Middleware básico
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'https://*.onrender.com'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost:3000', 
+    'http://localhost:3004', 
+    'https://*.onrender.com'
+  ],
   credentials: true
 }));
 
