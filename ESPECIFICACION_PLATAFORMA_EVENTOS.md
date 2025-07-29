@@ -346,7 +346,11 @@ erDiagram
         uuid festejado_id FK
         enum tipo_parentesco
         string descripcion_parentesco
+        string relacion_detallada
         int nivel_generacional
+        enum lado_familia
+        json arbol_genealogico_posicion
+        boolean es_visible_proveedor
     }
     
     INVITACION_DIGITAL {
@@ -567,6 +571,56 @@ erDiagram
         boolean sesion_activa
     }
     
+    FORMULARIO_DINAMICO {
+        uuid id PK
+        uuid proveedor_id FK
+        uuid servicio_id FK
+        string nombre_formulario
+        json estructura_campos
+        json reglas_validacion
+        enum momento_aplicacion
+        boolean es_obligatorio
+        timestamp fecha_creacion
+        boolean esta_activo
+    }
+    
+    RESPUESTA_FORMULARIO {
+        uuid id PK
+        uuid formulario_dinamico_id FK
+        uuid evento_id FK
+        uuid usuario_respuesta_id FK
+        json respuestas_datos
+        enum estatus_completado
+        timestamp fecha_respuesta
+        timestamp fecha_actualizacion
+    }
+    
+    SOLICITUD_INFORMACION {
+        uuid id PK
+        uuid proveedor_id FK
+        uuid evento_id FK
+        string tipo_informacion_solicitada
+        text descripcion_solicitud
+        json campos_especificos
+        enum prioridad_solicitud
+        enum estatus_respuesta
+        timestamp fecha_solicitud
+        timestamp fecha_limite
+        uuid colaborador_asignado_id FK
+    }
+    
+    PREFERENCIAS_PERSONALIZADAS {
+        uuid id PK
+        uuid evento_id FK
+        uuid servicio_id FK
+        uuid usuario_id FK
+        json preferencias_datos
+        json restricciones_datos
+        json sugerencias_especiales
+        timestamp fecha_captura
+        boolean aplicado_automaticamente
+    }
+    
     SOLICITUD_COTIZACION {
         uuid id PK
         uuid evento_id FK
@@ -717,6 +771,16 @@ erDiagram
     PROVEEDOR ||--o{ PAGINA_PUBLICA_PROVEEDOR : "tiene página"
     
     USUARIO ||--o{ SESION_CHATBOT : "usa chatbot"
+    
+    PROVEEDOR ||--o{ FORMULARIO_DINAMICO : "crea formularios"
+    SERVICIO ||--o{ FORMULARIO_DINAMICO : "requiere formulario"
+    FORMULARIO_DINAMICO ||--o{ RESPUESTA_FORMULARIO : "recibe respuestas"
+    
+    PROVEEDOR ||--o{ SOLICITUD_INFORMACION : "solicita datos"
+    EVENTO ||--o{ SOLICITUD_INFORMACION : "proporciona info"
+    
+    EVENTO ||--o{ PREFERENCIAS_PERSONALIZADAS : "captura preferencias"
+    SERVICIO ||--o{ PREFERENCIAS_PERSONALIZADAS : "personaliza con"
 ```
 
 ## 4. MODELO ECONÓMICO Y SISTEMA DE COSTOS
@@ -1106,7 +1170,39 @@ sequenceDiagram
 - **Integración con redes sociales**
 - **SEO optimizado** para búsquedas
 
-### 9.26 Cálculos Logísticos Inteligentes
+### 9.26 Sistema de Parentesco Avanzado
+- **Relaciones complejas**: "El nieto de mi abuelita", "La cuñada de mi hermana"
+- **Descripción detallada**: Campo libre para relaciones únicas
+- **Lados de familia**: Familia materna/paterna claramente identificados
+- **Posición en árbol**: Coordenadas visuales en el árbol genealógico
+- **Visibilidad para proveedores**: Control de qué relaciones ven los proveedores
+- **Menciones especiales**: Identificación automática de padrinos, abuelos, etc.
+
+### 9.27 Formularios Dinámicos por Proveedor
+- **Creación personalizada** por cada proveedor:
+  - Músico: Canciones favoritas, géneros prohibidos, momentos especiales
+  - Fotógrafo: Poses deseadas, momentos clave, familiares importantes
+  - Decorador: Colores preferidos, estilos, elementos personales
+  - Banquete: Restricciones dietéticas, platillos favoritos, alergias
+- **Momentos de aplicación**:
+  - Al contratar servicio
+  - Durante planificación
+  - Semana antes del evento
+  - Día del evento
+- **Validación inteligente** con reglas personalizadas
+- **Integración con itinerario** automática
+
+### 9.28 Solicitud Inteligente de Información
+- **Proveedores pueden solicitar datos específicos**:
+  - Lista de padrinos y madrinas
+  - Información de familiares VIP
+  - Preferencias musicales detalladas
+  - Restricciones y prohibiciones
+- **Asignación de responsables** para recopilar info
+- **Fechas límite** para entrega de información
+- **Seguimiento automático** con recordatorios
+
+### 9.29 Cálculos Logísticos Inteligentes
 - Distancias automáticas entre proveedor y evento
 - Costos de transporte por km
 - Tiempo de traslado y costos de combustible
@@ -1122,7 +1218,89 @@ sequenceDiagram
 6. ⏳ Implementar autenticación y gestión de usuarios
 
 ---
-### 9.27 Diagrama de Ecosistema Completo
+## 10. RECOMENDACIONES PARA MEJORAR EL FLUJO
+
+### 10.1 Funcionalidades Faltantes Críticas
+
+**📊 Dashboard Analítico Inteligente:**
+- **Predicciones de costos** basadas en eventos similares
+- **Alertas tempranas** de posibles problemas (clima, disponibilidad)
+- **Recomendaciones proactivas** de servicios complementarios
+- **Análisis de tendencias** por región y temporada
+
+**🔄 Sistema de Workflow Automatizado:**
+- **Flujos predefinidos** por tipo de evento con checkpoints
+- **Automatización de tareas rutinarias** (recordatorios, seguimientos)
+- **Escalación automática** cuando hay retrasos
+- **Integración con calendarios** externos (Google, Outlook)
+
+**📱 App de Campo para Proveedores:**
+- **Modo offline** para trabajar durante eventos
+- **Cámara integrada** para evidencias en tiempo real
+- **GPS tracking** para confirmación de llegada
+- **Comunicación directa** con organizador del evento
+
+**💳 Sistema Financiero Avanzado:**
+- **Facturación automática** por hitos cumplidos
+- **Pagos programados** con recordatorios
+- **Control de flujo de caja** para proveedores
+- **Integración con sistemas contables** (SAT, facturación electrónica)
+
+**🔍 Sistema de Auditoría y Cumplimiento:**
+- **Tracking completo** de cada cambio en el evento
+- **Verificación de cumplimiento** de contratos
+- **Documentación legal** automática
+- **Respaldo en la nube** de toda la información
+
+### 10.2 Mejoras de Experiencia de Usuario
+
+**🎨 Personalización Visual Avanzada:**
+- **Temas visuales** por tipo de evento
+- **Branding personalizado** para organizadores profesionales
+- **Modo oscuro/claro** automático
+- **Accesibilidad completa** (lectores de pantalla, alto contraste)
+
+**🤖 IA y Machine Learning:**
+- **Predicción de preferencias** basada en eventos anteriores
+- **Optimización automática** de itinerarios
+- **Detección de patrones** para mejorar recomendaciones
+- **Chatbot con procesamiento de lenguaje natural**
+
+**📊 Analytics y Business Intelligence:**
+- **Dashboards ejecutivos** para toma de decisiones
+- **Reportes predictivos** de rentabilidad
+- **Análisis de satisfacción** del cliente
+- **Benchmarking** contra la competencia
+
+### 10.3 Integraciones Estratégicas
+
+**🌍 Ecosistema de Partners:**
+- **API abierta** para integraciones de terceros
+- **Marketplace de plugins** para funcionalidades adicionales
+- **Integración con ERPs** empresariales
+- **Conectores con redes sociales** para marketing
+
+**📦 Logística y Supply Chain:**
+- **Integración con servicios de courier** (DHL, FedEx)
+- **Tracking de productos** en tiempo real
+- **Gestión de inventario** compartido entre proveedores
+- **Optimización de rutas** con IA
+
+### 10.4 Escalabilidad y Crecimiento
+
+**🌐 Expansión Geográfica:**
+- **Localización por país** (monedas, idiomas, cultura)
+- **Adaptación legal** por jurisdicción
+- **Red de proveedores** interconectada
+- **Programa de afiliados** para crecimiento orgánico
+
+**💰 Modelos de Negocio Adicionales:**
+- **Suscripciones premium** con funcionalidades avanzadas
+- **Servicios de consultoría** personalizada
+- **Seguros de eventos** integrados
+- **Financiamiento** para eventos grandes
+
+### 9.30 Diagrama de Ecosistema Completo
 
 ```mermaid
 flowchart TD
@@ -1178,7 +1356,7 @@ flowchart TD
     NT --> WA
 ```
 
-### 9.28 Diagrama de Arquitectura Offline-First
+### 9.31 Diagrama de Arquitectura Offline-First
 
 ```mermaid
 flowchart TD
@@ -1217,7 +1395,7 @@ flowchart TD
     QUEUE -->|Procesa cambios| DB
 ```
 
-### 9.29 Diagrama de Flujo de Evento Multi-etapa
+### 9.32 Diagrama de Flujo de Evento Multi-etapa
 
 ```mermaid
 flowchart TD
